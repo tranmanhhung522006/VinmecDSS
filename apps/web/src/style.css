@@ -226,3 +226,55 @@
 .v05 .ai-safety{display:flex;align-items:flex-start;gap:6px;margin:17px 0 0}
 .v05 .ai-safety svg{flex-shrink:0}
 @media(max-width:720px){.v05 .ai-conversation{padding:11px;max-height:560px}.v05 .ai-chat-bubble{max-width:100%;padding:12px}.v05 .ai-chat-bubble.from-user{max-width:90%}.v05 .ai-simulation-metrics{grid-template-columns:1fr}.v05 .ai-input-actions>button{width:100%}}
+
+
+/* v0.8 capacity planning — self-contained enterprise lab */
+.v05{--lab-border:#e0e7eb;--lab-ink:#223d4e;--lab-accent:#286e83}
+.v05 .lab-shell{display:flex;flex-direction:column;gap:17px}
+.v05 .lab-intro{padding:24px 26px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.v05 .lab-intro-title{display:flex;align-items:flex-start;gap:15px}
+.v05 .lab-icon{width:47px;height:47px;border:1px solid #cfe1e8;display:grid;place-items:center;border-radius:11px;background:#edf5f7;color:#276a80;flex-shrink:0}
+.v05 .lab-intro h2{font-size:22px;margin:5px 0 8px;color:var(--lab-ink)}
+.v05 .lab-intro p{font-size:12px;color:#718592;margin:0;max-width:650px}
+.v05 .lab-intro-note{font-size:11px;color:#8b724b;background:#fbf8f1;border:1px solid #ece2cf;padding:10px;display:flex;align-items:center;gap:8px;border-radius:7px;line-height:1.5;max-width:260px}
+.v05 .lab-intro-note svg{flex-shrink:0}
+.v05 .lab-grid{display:grid;grid-template-columns:minmax(330px,.88fr) minmax(0,1.5fr);gap:17px;align-items:start}
+.v05 .lab-form{position:sticky;top:86px}
+.v05 .lab-section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:21px;gap:9px}
+.v05 .lab-section-title h2{margin:7px 0 0}
+.v05 .lab-reset{font-size:11px;padding:9px}
+.v05 .lab-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px;row-gap:2px}
+.v05 .lab-fields .field{font-size:11px;line-height:1.5;min-width:0}
+.v05 .lab-fields .field input{min-width:0}
+.v05 .lab-range{margin:8px 0 17px}
+.v05 .lab-range>span{display:flex;justify-content:space-between}
+.v05 .lab-range input{accent-color:#28778c;box-shadow:none}
+.v05 .lab-range small{font-size:10px;line-height:1.5;color:#869aa6;display:block;margin-top:8px;font-weight:400}
+.v05 .lab-preview{display:flex;align-items:center;justify-content:space-between;background:#f5f9fa;border:1px solid #e1ebef;padding:14px;border-radius:8px;margin:12px 0 15px;color:#657d89;font-size:11px}
+.v05 .lab-preview strong{font-size:21px;letter-spacing:-.5px;color:#29677c}
+.v05 .lab-preview small{font-size:10px;font-weight:500;color:#718895}
+.v05 .lab-error{margin:12px 0 0;color:#aa4640;font-size:12px}
+.v05 .lab-results{min-width:0;display:flex;flex-direction:column;gap:17px}
+.v05 .lab-empty{min-height:360px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px;color:#70909e}
+.v05 .lab-empty h2{margin:20px 0 10px;color:#2c5467}
+.v05 .lab-empty p{max-width:530px;font-size:12px;line-height:1.75}
+.v05 .lab-empty-steps{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+.v05 .lab-empty-steps span{border:1px solid #e0e9ec;border-radius:7px;padding:9px 12px;background:#f8fafb;font-size:10px;color:#668492}
+.v05 .lab-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.v05 .lab-metrics>.card{padding:17px;min-width:0}
+.v05 .lab-metrics span{display:flex;align-items:center;gap:7px;font-size:11px;color:#728693}
+.v05 .lab-metrics strong{display:block;font-size:28px;letter-spacing:-.65px;color:#244e61;margin:11px 0 4px}
+.v05 .lab-metrics strong.lab-alert-number{color:#b56337}
+.v05 .lab-metrics small{font-size:10px;color:#8296a3}
+.v05 .lab-chart{height:250px;min-width:0;margin-bottom:12px}
+.v05 .lab-table-scroll{max-height:360px;overflow:auto}
+.v05 .lab-table-scroll th{position:sticky;top:0}
+.v05 .lab-table-scroll td{font-size:11px}
+.v05 .lab-selected{background:#edf6f8}
+.v05 .lab-status{font-size:10px;color:#276f82;font-weight:700}
+.v05 .lab-caption{font-size:10px;color:#80939d;line-height:1.7;margin:13px 0 0}
+.v05 .lab-analysis h2{margin:7px 0}
+.v05 .lab-limitations p{display:flex;align-items:flex-start;gap:9px;font-size:11px;line-height:1.6;color:#70828e;margin:12px 0 0}
+.v05 .lab-limitations svg{color:#a27c51;flex-shrink:0;margin-top:1px}
+@media(max-width:1180px){.v05 .lab-grid{grid-template-columns:1fr}.v05 .lab-form{position:static}}
+@media(max-width:700px){.v05 .lab-intro{flex-direction:column;align-items:stretch;padding:17px}.v05 .lab-intro-note{max-width:none}.v05 .lab-fields{grid-template-columns:1fr}.v05 .lab-metrics{gap:8px}.v05 .lab-metrics>.card{padding:12px}.v05 .lab-metrics strong{font-size:22px}.v05 .lab-chart{height:220px}}
