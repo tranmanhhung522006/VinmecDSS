@@ -35,6 +35,7 @@ model User {
   active Boolean @default(true)
   decisions Decision[]
   scenarios Scenario[]
+  sessions AuthSession[]
   studies DecisionStudy[] @relation("DecisionStudyAuthor")
   studyReviews StudyReview[] @relation("StudyReviewer")
   createdAt DateTime @default(now())
@@ -108,6 +109,18 @@ model Insight {
   text String @db.Text
   createdAt DateTime @default(now())
   scenario Scenario @relation(fields: [scenarioId], references: [id])
+}
+/** A single revocable JWT session. Tokens are never persisted in plaintext. */
+model AuthSession {
+  id String @id @default(uuid())
+  userId String
+  tokenHash String @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
 }
 /** Immutable server-calculated analysis snapshot, separate from legacy 3-option scenarios. */
 model DecisionStudy {
