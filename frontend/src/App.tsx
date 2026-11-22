@@ -182,8 +182,8 @@ export default function App(){
     onScenario={()=>navigate('scenario')} onHistory={()=>navigate('history')}
     onRefresh={()=>void doAction(async expected=>{await refresh(token,expected);if(expected===revision.current)setNotice('Đã cập nhật dữ liệu từ backend.');})}
     onSelect={item=>{const full=scenarios.find(s=>s.id===item.id);if(full)void selectScenario(full)}}/>}
-  {tab==='capacity'&&<CapacityPlanningLab department={summary?.department??null} token={token} onSaved={()=>navigate('studies')}/> }
-  {tab==='shifts'&&<ShiftAllocationLab token={token} onSaved={()=>navigate('studies')}/>}
+  {tab==='capacity'&&<CapacityPlanningLab department={summary?.department??null} token={session.user.role==='ADMIN'?'':token} onSaved={()=>navigate('studies')}/> }
+  {tab==='shifts'&&<ShiftAllocationLab token={session.user.role==='ADMIN'?'':token} onSaved={()=>navigate('studies')}/>}
   {tab==='studies'&&!isVisitor&&<StudiesInbox token={token} role={session.user.role}/>}
   {tab==='ai'&&<AiWorkspace
     scenarios={scenarios} selected={selected} messages={aiMessages} status={aiStatus}
