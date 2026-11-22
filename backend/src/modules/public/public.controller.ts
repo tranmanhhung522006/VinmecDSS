@@ -7,6 +7,7 @@ import {optimizeCapacity} from '../../planning.engine';
 import {optimizeShiftAllocation} from '../../shift.engine';
 import {analyzeDecisionRobustness} from '../../robustness.engine';
 import {rollingForecastBacktest} from '../../forecast.metrics';
+import {compareForecastModels} from '../../forecast.comparison';
 import {getModelCatalog} from '../../models/model.catalog';
 
 @Controller('public')
@@ -43,6 +44,18 @@ export class PublicController {
     for(const v of records){const key=v.day.toISOString().slice(0,10);const old=aggregate.get(key);aggregate.set(key,{day:v.day,visits:(old?.visits??0)+v.visits});}
     try {return {...forecastByWeekday(targetDay,Array.from(aggregate.values())),targetDay:input.targetDay,synthetic:true};}
     catch {throw new BadRequestException('No historical data before selected date');}
+  }
+  @Post('forecast-comparison') async forecastComparison(@Body() input:ForecastDto){
+    const d=await this.department(),targetDay=parseDate(input.targetDay);
+    const records=await this.db.visitAggregate.findMany({where:{departmentId:d.id,day:{lt:targetDay}},orderBy:{day:'asc'}});
+    const aggregate=new Map<string,{day:Date;visits:number}>();
+    for(const record of records){
+      const key=record.day.toISOString().slice(0,10);
+      const previous=aggregate.get(key);
+      aggregate.set(key,{day:record.day,visits:(previous?.visits??0)+record.visits});
+    }
+    try{return compareForecastModels([...aggregate.values()],targetDay);}
+    catch(e){throw new BadRequestException(e instanceof Error?e.message:'Forecast comparison could not be computed');}
   }
   @Post('evaluate') async evaluate(@Body() input:ScenarioDto){
     const d=await this.department();parseDate(input.targetDay);
