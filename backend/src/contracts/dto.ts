@@ -1,4 +1,4 @@
-import {IsString, IsOptional, IsNumber, Min, Max, MaxLength, IsInt, IsIn, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested} from 'class-validator';
+import {IsString, IsOptional, IsNumber, Min, Max, MaxLength, IsInt, IsIn, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, IsObject} from 'class-validator';
 import type {ChatTurn} from '../ai.workflow';
 import {Type} from 'class-transformer';
 
@@ -41,4 +41,14 @@ export class ShiftAllocationDto {
   @IsInt() @Min(0) @Max(60) currentDoctorSlots!:number;
   @IsInt() @Min(0) @Max(100000000) costPerAdditionalSlotVnd!:number;
   @IsInt() @Min(50) @Max(100) targetUtilizationPercent!:number;
+}
+
+export class SaveStudyDto {
+  @IsString() @MaxLength(100) name!:string;
+  @IsIn(['CAPACITY','SHIFT']) kind!:'CAPACITY'|'SHIFT';
+  @IsObject() input!:Record<string,unknown>;
+}
+export class ReviewStudyDto {
+  @IsIn(['APPROVED','REJECTED']) action!:'APPROVED'|'REJECTED';
+  @IsString() @MaxLength(500) rationale!:string;
 }

@@ -13,12 +13,13 @@ type Robustness={baseDoctors:number;robustDoctors:number;base:StressOption;robus
 type Result={inputs:Inputs&{demand:number;currentDoctors:number};options:Option[];recommended:Option;current:Option|null;sensitivity:{deltaPercent:number;demand:number;doctors:number;planningShortfall:number;addedCostVnd:number}[];warnings:string[];searchSpace:number;method:string;robustness:Robustness;synthetic:true;persisted:false};
 const fmt=(v:number)=>new Intl.NumberFormat('vi-VN').format(v);
 const currency=(v:number)=>fmt(v)+' ₫';
-export default function CapacityPlanningLab({department}:{department:Department|null}){
+export default function CapacityPlanningLab({department,token,onSaved}:{department:Department|null;token:string;onSaved:()=>void}){
   const [form,setForm]=useState<Inputs>({baselineDemand:200,growthPercent:30,targetUtilizationPercent:100,availableDoctors:10,rooms:10,visitsPerDoctor:30,extraDoctorCost:900000});
   const [dirty,setDirty]=useState(false);
   const [result,setResult]=useState<Result|null>(null);
   const [error,setError]=useState('');
   const [loading,setLoading]=useState(false);
+  const [saving,setSaving]=useState(false);
   useEffect(()=>{if(department&&!dirty)setForm(previous=>({...previous,
     availableDoctors:department.availableDoctors,rooms:department.rooms,
     visitsPerDoctor:department.visitsPerDoctor,extraDoctorCost:department.extraDoctorCost}));
@@ -39,6 +40,15 @@ export default function CapacityPlanningLab({department}:{department:Department|
       availableDoctors:department.availableDoctors,rooms:department.rooms,
       visitsPerDoctor:department.visitsPerDoctor,extraDoctorCost:department.extraDoctorCost});
     setDirty(false);setResult(null);setError('');
+  }
+  async function saveStudy(){
+    if(!result||!token||saving)return;
+    setSaving(true);setError('');
+    try{
+      await request('/studies','POST',{kind:'CAPACITY',name:'Capacity Planning · '+result.inputs.demand+' lượt',input:form},token);
+      onSaved();
+    }catch(e){setError(e instanceof Error?e.message:'Không thể lưu hồ sơ');}
+    finally{setSaving(false);}
   }
   function exportCsv(){
     if(!result)return;
@@ -70,6 +80,7 @@ export default function CapacityPlanningLab({department}:{department:Department|
       </form>
       <section className="lab-results">
         {!result?<div className="card lab-empty"><Target size={36}/><h2>Không gian phân tích What-if</h2><p>Điều chỉnh các giả định rồi chạy mô phỏng. Kết quả được tính tại backend, không sử dụng AI để tự tạo số liệu và không ghi vào hồ sơ quyết định.</p><div className="lab-empty-steps"><span>01. Nhập giả định</span><span>02. Xếp hạng phương án</span><span>03. Kiểm tra độ nhạy</span></div></div>:<>
+          {token&&<div className="lab-study-action"><span>Kết quả đang ở chế độ mô phỏng, chưa lưu và chưa được phê duyệt.</span><button className="primary" type="button" disabled={saving} onClick={()=>void saveStudy()}>{saving?'Đang lưu…':'Lưu hồ sơ chờ Manager duyệt'}</button></div>}
           <div className="lab-metrics">
             <div className="card"><span><Users size={15}/> Bác sĩ đề xuất</span><strong>{result.recommended.doctors}</strong><small>Giới hạn {Math.min(result.inputs.availableDoctors,result.inputs.rooms)} người</small></div>
             <div className="card"><span><Activity size={15}/> Công suất kế hoạch</span><strong>{fmt(result.recommended.planningCapacity)}</strong><small>Lượt khám/ngày theo giả định</small></div>

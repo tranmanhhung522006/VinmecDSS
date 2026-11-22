@@ -344,3 +344,22 @@
 .v05 .forecast-comparison .table-wrap{overflow-x:auto}
 .v05 .forecast-comparison table{min-width:600px}
 @media(max-width:850px){.v05 .forecast-compare-highlight{grid-template-columns:1fr}.v05 .forecast-compare-form .field,.v05 .forecast-compare-form button{width:100%;max-width:none}}
+
+/* v0.14 — shared DSS study registry with manager review */
+.v05 .lab-study-action{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border:1px solid #d8e3e8;border-radius:8px;background:#f4f8fa;padding:13px 16px}
+.v05 .lab-study-action span{font-size:11px;color:#587583;line-height:1.6;flex:1;min-width:180px}
+.v05 .lab-study-action button{white-space:normal}
+.v05 .study-workspace{display:flex;flex-direction:column;gap:16px}
+.v05 .study-list{display:flex;flex-direction:column;gap:13px;margin-top:18px}
+.v05 .study-item{border:1px solid #e0e7eb;background:#fff;border-radius:9px;padding:19px}
+.v05 .study-item-head{display:flex;justify-content:space-between;align-items:start;gap:14px}
+.v05 .study-item-head h3{font-size:15px;letter-spacing:-.2px;margin:8px 0}
+.v05 .study-item-head p{font-size:11px}
+.v05 .study-summary{display:flex;gap:12px;flex-wrap:wrap;border-top:1px solid #eef1f3;border-bottom:1px solid #eef1f3;padding:13px 0;margin:14px 0}
+.v05 .study-summary span{font-size:11px;color:#66808c;line-height:1.6;flex:1;min-width:130px}
+.v05 .study-summary strong{color:#355365}
+.v05 .study-review-form .field{margin:12px 0}
+.v05 .study-review-note{font-size:11px;line-height:1.6;color:#537a70;display:flex;align-items:flex-start;gap:9px}
+.v05 .study-review-note svg{flex-shrink:0}
+.v05 .study-notice{color:#315f56;background:#f1f8f4;padding:12px;border:1px solid #d6e9df;border-radius:7px;font-size:12px}
+@media(max-width:700px){.v05 .study-item{padding:13px}.v05 .study-item-head{flex-direction:column}.v05 .lab-study-action button{width:100%}}
