@@ -1,0 +1,58 @@
+name: Import Vinmec DSS v0.2.1 code
+on:
+  push:
+    branches: [feature/vinmec-dss-v0.2-professional-fullstack]
+    paths: ['.vinmec-import/part6.txt']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Reconstruct verified source archive
+        shell: bash
+        run: |
+          python3 -m pip install --quiet brotli
+          python3 - <<'PY'
+          import base64, brotli, tarfile, io, hashlib, pathlib, shutil
+          root=pathlib.Path('.')
+          chunks=[(root/'.vinmec-import'/f'part{i}.txt').read_text().strip() for i in range(1,7)]
+          packed=base64.b64decode(''.join(chunks), validate=True)
+          expected='ce2a16ee6bae9d6e9337eb221387838c4614bbb84b11d911e152265e60c203cc'
+          assert hashlib.sha256(packed).hexdigest()==expected,'Source payload SHA256 mismatch'
+          raw=brotli.decompress(packed)
+          with tarfile.open(fileobj=io.BytesIO(raw),mode='r:') as tf:
+            members=tf.getmembers()
+            assert len(members)==42,'Unexpected archive contents'
+            assert all(m.isfile() and pathlib.PurePosixPath(m.name).parts[0] != '..'
+                       and not m.name.startswith('/') and '..' not in pathlib.PurePosixPath(m.name).parts
+                       and not m.name.endswith('/.env') for m in members),'Unsafe source archive'
+            for directory in ['apps','backend','frontend','database']:
+              if (root/directory).exists(): shutil.rmtree(root/directory)
+            for m in members:
+              dest=root/m.name
+              dest.parent.mkdir(parents=True, exist_ok=True)
+              dest.write_bytes(tf.extractfile(m).read())
+          shutil.rmtree(root/'.vinmec-import')
+          (root/'IMPORT_PROVENANCE.md').write_text(
+            'Vinmec DSS v0.2.1 Professional Full-stack Prototype\n\n'
+            'Imported from the owner-provided source ZIP (42 files).\n'
+            'Compressed source SHA-256: '+expected+'\n')
+          PY
+      - name: Install and verify
+        run: |
+          npm install --no-audit --no-fund
+          npm run test
+          npm run build
+      - name: Commit imported source
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Import Vinmec DSS v0.2.1 Professional Full-stack Prototype"
+          git push
