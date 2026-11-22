@@ -7,7 +7,10 @@ import {downloadCsv} from '../utils/csv';
 type Department={activeDoctors:number;availableDoctors:number;rooms:number;visitsPerDoctor:number;extraDoctorCost:number};
 type Inputs={baselineDemand:number;growthPercent:number;targetUtilizationPercent:number;availableDoctors:number;rooms:number;visitsPerDoctor:number;extraDoctorCost:number};
 type Option={doctors:number;physicalCapacity:number;planningCapacity:number;physicalShortfall:number;planningShortfall:number;sparePlanningCapacity:number;addedCostVnd:number;utilizationPercent:number;coversPlanningTarget:boolean;withinCurrentRoster:boolean;recommended:boolean};
-type Result={inputs:Inputs&{demand:number;currentDoctors:number};options:Option[];recommended:Option;current:Option|null;sensitivity:{deltaPercent:number;demand:number;doctors:number;planningShortfall:number;addedCostVnd:number}[];warnings:string[];searchSpace:number;method:string;synthetic:true;persisted:false};
+type StressOption={doctors:number;coveredCases:number;coveragePercent:number;worstPlanningShortfall:number;meanPlanningShortfall:number;baselineShortfall:number;addedCostVnd:number};
+type StressCase={demandDeltaPercent:number;productivityDeltaPercent:number;demand:number;visitsPerDoctor:number;baseShortfall:number;robustShortfall:number};
+type Robustness={baseDoctors:number;robustDoctors:number;base:StressOption;robust:StressOption;cases:StressCase[];options:StressOption[];casesEvaluated:number;warnings:string[];method:string};
+type Result={inputs:Inputs&{demand:number;currentDoctors:number};options:Option[];recommended:Option;current:Option|null;sensitivity:{deltaPercent:number;demand:number;doctors:number;planningShortfall:number;addedCostVnd:number}[];warnings:string[];searchSpace:number;method:string;robustness:Robustness;synthetic:true;persisted:false};
 const fmt=(v:number)=>new Intl.NumberFormat('vi-VN').format(v);
 const currency=(v:number)=>fmt(v)+' ₫';
 export default function CapacityPlanningLab({department}:{department:Department|null}){
@@ -42,6 +45,9 @@ export default function CapacityPlanningLab({department}:{department:Department|
     const header=['Doctors','Physical capacity','Planning capacity','Planning shortfall','Physical shortfall','Added cost VND','Utilization %','Recommended'];
     const rows=result.options.map(o=>[o.doctors,o.physicalCapacity,o.planningCapacity,o.planningShortfall,o.physicalShortfall,o.addedCostVnd,o.utilizationPercent,o.recommended?'Yes':'No']);
     downloadCsv('vinmec-capacity-planning.csv',[header,...rows]);
+    const robustHeader=['Demand variation %','Productivity variation %','Demand','Visits per doctor','Baseline doctors','Baseline shortfall','Robust doctors','Robust shortfall'];
+    const robustRows=result.robustness.cases.map(c=>[c.demandDeltaPercent,c.productivityDeltaPercent,c.demand,c.visitsPerDoctor,result.robustness.baseDoctors,c.baseShortfall,result.robustness.robustDoctors,c.robustShortfall]);
+    downloadCsv('vinmec-decision-stress-test.csv',[robustHeader,...robustRows]);
   }
   const projection=Math.round(form.baselineDemand*(1+form.growthPercent/100));
   return <div className="lab-shell">
@@ -77,6 +83,18 @@ export default function CapacityPlanningLab({department}:{department:Department|
             <p className="lab-caption">Ưu tiên ít thiếu hụt nhất → chi phí bổ sung thấp nhất → ít bác sĩ nhất. Đây là quy tắc lập kế hoạch minh bạch, không phải tối ưu lịch trực lâm sàng.</p>
           </section>
           <section className="card panel lab-analysis"><div className="micro">03 / PHÂN TÍCH ĐỘ NHẠY</div><h2>Nếu nhu cầu thay đổi?</h2><p className="muted">Tính lại phương án tại năm mức nhu cầu, giữ nguyên những giả định nguồn lực.</p><div className="lab-table-scroll"><table><thead><tr><th>Thay đổi</th><th>Nhu cầu</th><th>Bác sĩ đề xuất</th><th>Thiếu hụt KH</th></tr></thead><tbody>{result.sensitivity.map(s=><tr key={s.deltaPercent}><td>{s.deltaPercent>0?'+':''}{s.deltaPercent}%</td><td>{fmt(s.demand)}</td><td>{s.doctors}</td><td>{fmt(s.planningShortfall)}</td></tr>)}</tbody></table></div></section>
+          <section className="card panel lab-analysis lab-robustness">
+            <div className="panel-head"><div><div className="micro">04 / DECISION ROBUSTNESS</div><h2>Độ bền của quyết định trước biến động</h2><p className="muted">Stress test 25 trường hợp: nhu cầu và năng suất bác sĩ cùng dao động từ −20% tới +20%. Các trường hợp không có trọng số xác suất.</p></div><span className="dss-tag blue">5 × 5 trường hợp</span></div>
+            <div className="lab-robust-grid">
+              <div className="lab-robust-option"><small>PHƯƠNG ÁN CƠ SỞ · TỐI ƯU CHI PHÍ</small><strong>{result.robustness.base.doctors} bác sĩ</strong><span>Bao phủ {result.robustness.base.coveredCases}/25 trường hợp</span><span>Thiếu cao nhất: <b>{fmt(result.robustness.base.worstPlanningShortfall)} lượt</b></span><span>Chi phí tăng: <b>{currency(result.robustness.base.addedCostVnd)}</b></span></div>
+              <div className="lab-robust-option lab-robust-conservative"><small>PHƯƠNG ÁN THẬN TRỌNG · ƯU TIÊN GIẢM THIẾU HỤT</small><strong>{result.robustness.robust.doctors} bác sĩ</strong><span>Bao phủ {result.robustness.robust.coveredCases}/25 trường hợp</span><span>Thiếu cao nhất: <b>{fmt(result.robustness.robust.worstPlanningShortfall)} lượt</b></span><span>Chi phí tăng: <b>{currency(result.robustness.robust.addedCostVnd)}</b></span></div>
+            </div>
+            <p className="lab-caption">Chênh lệch chi phí bổ sung: {currency(result.robustness.robust.addedCostVnd-result.robustness.base.addedCostVnd)}. Kết quả thận trọng là góc nhìn khác, không tự thay thế phương án cơ sở hoặc quyết định của Manager.</p>
+            <h3 className="lab-subheading">Ma trận thiếu hụt khi giữ nguyên {result.robustness.baseDoctors} bác sĩ cơ sở</h3>
+            <div className="lab-table-scroll"><table className="lab-stress-matrix"><thead><tr><th>Nhu cầu / Năng suất</th>{[-20,-10,0,10,20].map(p=><th key={p}>{p>0?'+':''}{p}%</th>)}</tr></thead><tbody>{[-20,-10,0,10,20].map(d=><tr key={d}><th scope="row">{d>0?'+':''}{d}%</th>{[-20,-10,0,10,20].map(p=>{const row=result.robustness.cases.find(c=>c.demandDeltaPercent===d&&c.productivityDeltaPercent===p);return <td key={p} className={row?.baseShortfall?'lab-stress-alert':'lab-stress-ok'} title={row?'Nhu cầu '+row.demand+' · năng suất '+row.visitsPerDoctor+'/bác sĩ':''}>{row?fmt(row.baseShortfall):'—'}</td>})}</tr>)}</tbody></table></div>
+            <p className="lab-caption">Mỗi ô là số lượt thiếu so với công suất kế hoạch của phương án cơ sở; 0 nghĩa là đáp ứng được nhu cầu giả định trong trường hợp đó. Tải CSV để xem cả hai phương án.</p>
+            <div className="lab-robust-notes">{result.robustness.warnings.map(w=><p key={w}><ShieldAlert size={14}/>{w}</p>)}</div>
+          </section>
           <section className="card panel lab-limitations"><div className="micro">GIẢ ĐỊNH VÀ GIỚI HẠN</div>{result.warnings.map(w=><p key={w}><ShieldAlert size={15}/>{w}</p>)}</section>
         </>}
       </section>
