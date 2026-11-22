@@ -1,6 +1,6 @@
 import {useEffect,useState,type ReactNode,type FormEvent} from 'react';
 import {BarChart,Bar,CartesianGrid,Tooltip,ResponsiveContainer,XAxis,YAxis} from 'recharts';
-import {Activity,BarChart3,ClipboardCheck,FileText,GitBranch,LogOut,ShieldCheck,Sparkles,Users,ArrowRight,Loader2,RefreshCw,CheckCircle2,AlertCircle,CalendarClock,Search,Download,Filter} from 'lucide-react';
+import {Activity,BarChart3,ClipboardCheck,FileText,GitBranch,LogOut,ShieldCheck,Sparkles,ArrowRight,Loader2,RefreshCw,CheckCircle2,AlertCircle,CalendarClock,Search,Download,Filter} from 'lucide-react';
 import {DemandPulse,ForecastQualityCard,ScenarioCapacityChart,type ForecastQuality} from './components/OperationsAnalytics';
 import {downloadCsv} from './utils/csv';
 
