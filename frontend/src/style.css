@@ -363,3 +363,34 @@
 .v05 .study-review-note svg{flex-shrink:0}
 .v05 .study-notice{color:#315f56;background:#f1f8f4;padding:12px;border:1px solid #d6e9df;border-radius:7px;font-size:12px}
 @media(max-width:700px){.v05 .study-item{padding:13px}.v05 .study-item-head{flex-direction:column}.v05 .lab-study-action button{width:100%}}
+
+/* Synthetic historical visit data editor inside the existing scenario workflow */
+.v05 .visit-history-panel{min-width:0}
+.v05 .visit-history-meta{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0 18px}
+.v05 .visit-history-meta span{display:flex;gap:7px;align-items:center;color:#607e8a;font-size:11px}
+.v05 .visit-history-meta svg{color:#3c7886}
+.v05 .visit-history-form{background:#f7fafb;border:1px solid #e1eaed;border-radius:9px;padding:15px;margin:15px 0}
+.v05 .visit-history-form-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.v05 .visit-history-form-head strong{color:#345667;font-size:12px}
+.v05 .visit-history-form-head span{font-size:10px;color:#78909c}
+.v05 .visit-history-fields{display:grid;grid-template-columns:1fr;gap:11px}
+.v05 .visit-history-fields .field{min-width:0}
+.v05 .visit-history-fields input{width:100%;min-width:0}
+.v05 .visit-history-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:12px}
+.v05 .visit-history-actions>span{color:#627d89;font-size:11px}
+.v05 .visit-history-actions>span strong{color:#2c5968}
+.v05 .visit-history-listhead{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin:19px 0 10px}
+.v05 .visit-history-listhead strong{color:#345667;font-size:12px}
+.v05 .visit-history-listhead p{font-size:11px;margin:6px 0 0}
+.v05 .visit-history-listhead input{font-size:11px;padding:10px;border:1px solid #dbe5ea;border-radius:7px;max-width:230px;width:100%}
+.v05 .visit-history-scroll{max-height:300px;overflow:auto}
+.v05 .visit-history-scroll table{min-width:470px}
+.v05 .visit-history-scroll thead{position:sticky;top:0;z-index:1}
+.v05 .visit-history-scroll td,.v05 .visit-history-scroll th{font-size:11px}
+.v05 .visit-history-scroll td .secondary{padding:6px 9px;font-size:10px}
+.v05 .visit-history-audit{margin-top:15px;border-top:1px solid #e3e9ed;padding-top:12px}
+.v05 .visit-history-audit summary{display:flex;gap:8px;align-items:center;cursor:pointer;font-size:11px;color:#527585;font-weight:700}
+.v05 .visit-history-audit .table-wrap{margin-top:11px;max-height:250px;overflow:auto}
+.v05 .visit-history-audit table{min-width:650px}
+.v05 .visit-history-readonly{background:#f7fafb;border:1px solid #e2eaee;padding:12px;border-radius:7px;font-size:11px;color:#64808e}
+@media(max-width:850px){.v05 .visit-history-fields{grid-template-columns:1fr}.v05 .visit-history-form{padding:12px}.v05 .visit-history-listhead input{max-width:none}}

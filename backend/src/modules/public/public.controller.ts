@@ -9,12 +9,14 @@ import {analyzeDecisionRobustness} from '../../robustness.engine';
 import {rollingForecastBacktest} from '../../forecast.metrics';
 import {compareForecastModels} from '../../forecast.comparison';
 import {getModelCatalog} from '../../models/model.catalog';
+import {listVisitHistory} from '../visits/visit-history.service';
 
 @Controller('public')
 export class PublicController {
   constructor(private db: Database) {}
   private async department(){const d=await this.db.department.findFirst();if(!d)throw new ServiceUnavailableException('Database not initialized');return d;}
   @Get('model-catalog') modelCatalog(){return getModelCatalog();}
+  @Get('visit-history') visitHistory(){return listVisitHistory(this.db);}
   @Get('summary') async summary(){
     const d=await this.department();
     const records=await this.db.visitAggregate.findMany({where:{departmentId:d.id},orderBy:{day:'asc'}});

@@ -38,6 +38,7 @@ model User {
   sessions AuthSession[]
   studies DecisionStudy[] @relation("DecisionStudyAuthor")
   studyReviews StudyReview[] @relation("StudyReviewer")
+  visitHistoryChanges VisitHistoryChange[]
   createdAt DateTime @default(now())
 }
 model Department {
@@ -49,6 +50,7 @@ model Department {
   visitsPerDoctor Int @default(30)
   extraDoctorCost Int @default(900000)
   visits VisitAggregate[]
+  visitHistoryChanges VisitHistoryChange[]
   forecasts ForecastRun[]
   scenarios Scenario[]
 }
@@ -148,4 +150,23 @@ model StudyReview {
   createdAt DateTime @default(now())
   study DecisionStudy @relation(fields: [studyId], references: [id])
   actor User @relation("StudyReviewer", fields: [actorId], references: [id])
+}
+
+/** Append-only audit of manually entered aggregate visit totals. */
+model VisitHistoryChange {
+  id String @id @default(uuid())
+  departmentId String
+  actorId String
+  day DateTime @db.Date
+  beforeMorning Int?
+  beforeAfternoon Int?
+  afterMorning Int
+  afterAfternoon Int
+  reason String @default("")
+  createdAt DateTime @default(now())
+  department Department @relation(fields: [departmentId], references: [id])
+  actor User @relation(fields: [actorId], references: [id])
+
+  @@index([day, createdAt])
+  @@index([actorId, createdAt])
 }

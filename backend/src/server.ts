@@ -7,11 +7,12 @@ import {PublicController} from './modules/public/public.controller';
 import {HealthController} from './modules/health/health.controller';
 import {DssController} from './modules/decisions/dss.controller';
 import {StudyController} from './modules/studies/study.controller';
+import {VisitHistoryController} from './modules/visits/visit-history.controller';
 
 /** Composition root. Keep delivery and domain logic outside the root module. */
 @Module({
   imports:[JwtModule.registerAsync({useFactory:()=>({secret:process.env.JWT_SECRET,signOptions:{issuer:'vinmec-dss-demo'}})})],
-  controllers:[HealthController,PublicController,AuthController,DssController,StudyController],
+  controllers:[HealthController,PublicController,AuthController,DssController,StudyController,VisitHistoryController],
   providers:[Database,JwtGuard]
 })
 export class AppModule{}
