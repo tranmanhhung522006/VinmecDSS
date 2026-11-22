@@ -8,9 +8,9 @@ The DSS is a **modular monolith** with five logical concerns, rather than a dist
 
 | DSS concern | Concrete implementation | Scope |
 |---|---|---|
-| Presentation and dialogue | `apps/web/src` (React) | Input, charts, scenarios, model transparency, human review |
-| Application and decision workflow | NestJS controllers under `apps/api/src/modules` | API endpoints, role checks, scenario/decision persistence |
-| Model management | `apps/api/src/models/model.catalog.ts`, `dss.engine.ts`, `planning.engine.ts`, `forecast.metrics.ts` | Deterministic calculations, forecast baselines, model metadata |
+| Presentation and dialogue | `frontend/src` (React) | Input, charts, scenarios, model transparency, human review |
+| Application and decision workflow | NestJS controllers under `backend/src/modules` | API endpoints, role checks, scenario/decision persistence |
+| Model management | `backend/src/models/model.catalog.ts`, `dss.engine.ts`, `planning.engine.ts`, `forecast.metrics.ts` | Deterministic calculations, forecast baselines, model metadata |
 | Knowledge and AI explanation | `ai.advisor.ts`, `ai.workflow.ts`, protected API | Optional LLM explanation grounded on computed aggregate evidence |
 | Data and governance | Prisma schema, PostgreSQL, authentication guard, tests | Synthetic historical aggregates, decisions, model results and role gates |
 
@@ -31,48 +31,31 @@ flowchart TB
 
 Controllers coordinate requests; calculations must remain in deterministic pure functions independent of NestJS or the OpenAI SDK. The OpenAI key is read server-side only. AI responses must not write decisions, mutate numeric recommendations or claim clinical validation.
 
-## Source tree
+## Source tree — physical layers
 
 ```text
-apps/
-  api/
-    src/
-      server.ts                      # NestJS composition root
-      main.ts                        # bootstrapping and common middleware
-      contracts/dto.ts               # validated inbound DTOs
-      infrastructure/database.ts     # Prisma provider
-      security/
-        auth.controller.ts           # sign-in and status
-        jwt.guard.ts                 # token and active-user verification
-      shared/request-context.ts      # date validation, principal, manager check
-      modules/
-        public/public.controller.ts  # no-write public synthetic analytics
-        health/health.controller.ts  # database health
-        decisions/dss.controller.ts  # protected decision lifecycle and AI
-      models/model.catalog.ts        # model transparency and governance
-      dss.engine.ts                  # legacy three-option rule
-      planning.engine.ts             # capacity enumeration (lab)
-      forecast.metrics.ts            # rolling backtest
-      ai.advisor.ts                  # structured advisor
-      ai.workflow.ts                 # conversational intent and verified What-if
-    prisma/schema.prisma
-    test/
-  web/
-    src/
-      App.tsx
-      components/
-        OperationsDashboard.tsx
-        CapacityPlanningLab.tsx
-        AiWorkspace.tsx
-        OperationsAnalytics.tsx
-        StaffLogin.tsx
-      lib/api.ts
-      style.css
-docs/
-  CAPACITY_LAB.md
-  DSS_ARCHITECTURE.md
-  OUTLINE_MAPPING.md
+frontend/                    # React + Vite
+  src/App.tsx
+  src/components/
+  src/lib/
+backend/                     # NestJS API + engines
+  src/main.ts
+  src/server.ts
+  src/modules/
+  src/security/
+  src/contracts/
+  src/infrastructure/
+  src/models/
+  src/dss.engine.ts
+  src/planning.engine.ts
+  src/ai.workflow.ts
+  test/
+database/                    # PostgreSQL model and synthetic seed
+  prisma/schema.prisma
+  prisma/seed.ts
 ```
+
+The backend executes Prisma CLI with `--schema ../database/prisma/schema.prisma`. The database is an independent source directory, **not** a third Render process; Neon hosts the PostgreSQL runtime. On deployment the NestJS server serves the React bundle at `frontend/dist`.
 
 ## Public and protected API boundaries
 
