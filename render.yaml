@@ -3,7 +3,7 @@ services:
     name: vinmec-dss
     runtime: node
     plan: free
-    region: singapore
+    region: ohio
     branch: main
     buildCommand: npm install && npm run db:generate && npm run build
     startCommand: npm run db:push && npm run db:seed && npm run start -w @vinmec/api
