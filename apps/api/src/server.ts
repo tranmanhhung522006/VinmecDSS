@@ -212,6 +212,7 @@ class DssController {
           const response=await client.responses.create({
             model:process.env.OPENAI_MODEL||'gpt-4.1-mini',
             max_output_tokens:750,store:false,
+            text:{format:{type:'json_object'}},
             instructions:advisoryInstructions,
             input:JSON.stringify({
               trustedEvidence:facts,
