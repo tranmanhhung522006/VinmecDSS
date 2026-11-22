@@ -18,11 +18,12 @@ const defaults:AllocationInput={
   ],
   doctorSlotBudget:10,currentDoctorSlots:8,costPerAdditionalSlotVnd:300000,targetUtilizationPercent:100
 };
-export default function ShiftAllocationLab(){
+export default function ShiftAllocationLab({token,onSaved}:{token:string;onSaved:()=>void}){
   const [inputs,setInputs]=useState<AllocationInput>(defaults);
   const [result,setResult]=useState<Result|null>(null);
   const [error,setError]=useState('');
   const [loading,setLoading]=useState(false);
+  const [saving,setSaving]=useState(false);
   const setGlobal=(key:Exclude<keyof AllocationInput,'shifts'>,value:number)=>{
     setInputs(s=>({...s,[key]:value}));setResult(null);setError('');
   };
@@ -34,6 +35,15 @@ export default function ShiftAllocationLab(){
     try{setResult(await request<Result>('/public/shift-allocation','POST',inputs));}
     catch(e){setResult(null);setError(e instanceof Error?e.message:'Không thể phân bổ nguồn lực');}
     finally{setLoading(false);}
+  }
+  async function saveStudy(){
+    if(!result||!token||saving)return;
+    setSaving(true);setError('');
+    try{
+      await request('/studies','POST',{kind:'SHIFT',name:'Phân bổ ba ca · '+result.recommended.totalDemand+' lượt',input:inputs},token);
+      onSaved();
+    }catch(e){setError(e instanceof Error?e.message:'Không thể lưu hồ sơ');}
+    finally{setSaving(false);}
   }
   function exportResults(){
     if(!result)return;
@@ -77,6 +87,7 @@ export default function ShiftAllocationLab(){
       </form>
       <div className="lab-results">
         {!result?<section className="card lab-empty"><Users size={34}/><h2>Phân bổ theo ba khung ca</h2><p>Điều chỉnh nhu cầu và nguồn lực từng ca rồi chạy mô hình tối ưu. Công cụ thử tất cả phân bổ nguyên trong giới hạn, không gọi OpenAI và không lưu kịch bản.</p></section>:<>
+          {token&&<div className="lab-study-action"><span>Mô phỏng chưa được lưu và chưa phê duyệt.</span><button className="primary" type="button" disabled={saving} onClick={()=>void saveStudy()}>{saving?'Đang lưu…':'Lưu hồ sơ chờ Manager duyệt'}</button></div>}
           <section className="lab-metrics">
             <div className="card"><span><Users size={15}/> Bác sĩ-ca đề xuất</span><strong>{result.recommended.totalDoctorSlots}</strong><small>Ngân sách tối đa {result.inputs.doctorSlotBudget} ca</small></div>
             <div className="card"><span>Tổng lượt thiếu</span><strong className={result.recommended.plannedShortfall?'lab-alert-number':''}>{fmt(result.recommended.plannedShortfall)}</strong><small>Trong cả ba khung ca</small></div>
