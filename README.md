@@ -18,16 +18,18 @@ Protected staff roles can save scenarios and decisions. Only a **MANAGER** can f
 ## Project structure
 
 ```text
-apps/api/src/           NestJS API, authentication, public endpoints, DSS engine
+apps/api/src/           Modular NestJS composition root, controllers, security, DTOs and model engines
 apps/api/prisma/        Prisma schema and idempotent synthetic seed
 apps/api/test/          Deterministic algorithm tests
-apps/web/src/           React interface and CSS
+apps/web/src/           React dashboard, scenario workflow, AI and capacity planning lab
 .github/workflows/      CI typecheck, tests, builds
 render.yaml             Render Blueprint (single web service)
 docs/DEPLOY_RENDER_NEON.md   Cloud deployment steps
 ARCHITECTURE.md         Scope, assumptions, governance
 TEST_PLAN.md            Acceptance tests
 docs/OUTLINE_MAPPING.md Links the prototype to INS3070 deliverables
+  docs/DSS_ARCHITECTURE.md  Architecture, ownership and boundaries
+  docs/CAPACITY_LAB.md     Constraint enumeration and sensitivity model
 ```
 
 ## Local development
@@ -61,6 +63,10 @@ npm run build
 ```
 
 GitHub Actions runs these checks automatically. A clean build does not by itself prove Neon connectivity or a successful Render deployment; verify those separately.
+
+## Decision-model transparency
+
+The read-only \`GET /api/public/model-catalog\` endpoint returns the implemented forecasting, validation, scenario, capacity planning and AI-advisory models with their limitations. The separate Capacity Planning Lab uses exhaustive enumeration for one constrained staffing variable; it does not replace the existing manager-approved three-option scenario workflow. See [DSS architecture](docs/DSS_ARCHITECTURE.md) and [Capacity Planning Lab](docs/CAPACITY_LAB.md).
 
 ## Core algorithm
 
