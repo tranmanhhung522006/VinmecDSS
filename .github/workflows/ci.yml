@@ -10,7 +10,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install
+      - run: npm install --include=dev
+        env:
+          NODE_ENV: production
       - run: npm run db:generate
       - run: npm run test
       - run: npm run build
