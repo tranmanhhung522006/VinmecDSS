@@ -24,13 +24,18 @@ export class AuthController {
     const ip=String(req.ip||req.socket?.remoteAddress||'unknown');
     const email=normalizeLoginEmail(input.email);
     const rateKey=ip+':'+email;
-    if(this.attempts.isBlocked(rateKey))throw new ForbiddenException('Too many failed sign-in attempts. Try again after 15 minutes.');
+    const ipKey='ip:'+ip;
+    // Prevent an attacker from bypassing account-specific throttling by changing emails.
+    if(this.attempts.isBlocked(rateKey)||this.attempts.isBlocked(ipKey))
+      throw new ForbiddenException('Too many failed sign-in attempts. Try again after 15 minutes.');
     const user=await this.db.user.findUnique({where:{email}});
     if(!user||!user.active||!await compare(input.password,user.passwordHash)){
       this.attempts.recordFailure(rateKey);
+      this.attempts.recordFailure(ipKey);
       throw new UnauthorizedException('Incorrect email or password');
     }
     this.attempts.recordSuccess(rateKey);
+    this.attempts.recordSuccess(ipKey);
     const token=await this.jwt.signAsync({sub:user.id,jti:randomUUID()},{expiresIn:'8h'});
     await this.db.authSession.create({data:{
       userId:user.id,tokenHash:tokenDigest(token),expiresAt:new Date(Date.now()+SESSION_MS)
