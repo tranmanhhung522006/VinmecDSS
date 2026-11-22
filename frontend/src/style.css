@@ -373,7 +373,7 @@
 .v05 .visit-history-form-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
 .v05 .visit-history-form-head strong{color:#345667;font-size:12px}
 .v05 .visit-history-form-head span{font-size:10px;color:#78909c}
-.v05 .visit-history-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.v05 .visit-history-fields{display:grid;grid-template-columns:1fr;gap:11px}
 .v05 .visit-history-fields .field{min-width:0}
 .v05 .visit-history-fields input{width:100%;min-width:0}
 .v05 .visit-history-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:12px}
