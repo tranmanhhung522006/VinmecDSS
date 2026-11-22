@@ -1,4 +1,4 @@
-import {IsString, IsOptional, IsNumber, Min, Max, MaxLength, IsInt, IsIn, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, IsObject} from 'class-validator';
+import {IsString, IsOptional, IsNumber, Min, Max, MaxLength, IsInt, IsIn, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, IsObject, Matches} from 'class-validator';
 import type {ChatTurn} from '../ai.workflow';
 import {Type} from 'class-transformer';
 
@@ -51,4 +51,12 @@ export class SaveStudyDto {
 export class ReviewStudyDto {
   @IsIn(['APPROVED','REJECTED']) action!:'APPROVED'|'REJECTED';
   @IsString() @MaxLength(500) rationale!:string;
+}
+
+/** One observed (synthetic) date, two fixed slots; never a future planning scenario. */
+export class SaveVisitHistoryDto {
+  @IsString() @Matches(/^\d{4}-\d{2}-\d{2}$/) day!:string;
+  @IsInt() @Min(0) @Max(100000) morningVisits!:number;
+  @IsInt() @Min(0) @Max(100000) afternoonVisits!:number;
+  @IsOptional() @IsString() @MaxLength(300) reason?:string;
 }
