@@ -4,6 +4,7 @@ import {ForecastDto,ScenarioDto,CapacityLabDto} from '../../contracts/dto';
 import {parseDate} from '../../shared/request-context';
 import {compareAlternatives,computeDemand,forecastByWeekday} from '../../dss.engine';
 import {optimizeCapacity} from '../../planning.engine';
+import {analyzeDecisionRobustness} from '../../robustness.engine';
 import {rollingForecastBacktest} from '../../forecast.metrics';
 import {getModelCatalog} from '../../models/model.catalog';
 
@@ -61,7 +62,7 @@ export class PublicController {
       extraDoctorCost:input.extraDoctorCost??d.extraDoctorCost,
       targetUtilizationPercent:input.targetUtilizationPercent
     });
-    return {...options,departmentName:d.name,baselineDemand:input.baselineDemand,growthPercent:input.growthPercent};
+    return {...options,robustness:analyzeDecisionRobustness(options.inputs,options.recommended.doctors),departmentName:d.name,baselineDemand:input.baselineDemand,growthPercent:input.growthPercent};
   }
 
 }

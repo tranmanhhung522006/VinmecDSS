@@ -296,3 +296,24 @@
 .v05 .catalog-source code{white-space:normal;overflow-wrap:anywhere;font-size:10px;color:#617e8c}
 .v05 .model-catalog>.tiny{margin:16px 0 0}
 @media(max-width:800px){.v05 .catalog-grid{grid-template-columns:1fr}}
+
+
+/* v0.10 deterministic decision robustness — no decorative probability claims */
+.v05 .lab-robustness{border-color:#d4dfe3}
+.v05 .lab-robust-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin:18px 0 10px}
+.v05 .lab-robust-option{display:flex;flex-direction:column;gap:9px;border:1px solid #e2e8eb;background:#fafbfc;padding:17px;border-radius:7px;min-width:0}
+.v05 .lab-robust-conservative{background:#f4f8f9;border-color:#d3e2e7}
+.v05 .lab-robust-option small{font-size:10px;letter-spacing:.35px;color:#6d8290;font-weight:700;line-height:1.5}
+.v05 .lab-robust-option>strong{font-size:21px;color:#2b4c5e;line-height:1.4}
+.v05 .lab-robust-option span{font-size:11px;color:#647c89;line-height:1.5}
+.v05 .lab-robust-option b{color:#334f5e}
+.v05 .lab-subheading{margin:20px 0 13px;font-size:13px;color:#334f5e}
+.v05 .lab-stress-matrix{text-align:center;min-width:410px}
+.v05 .lab-stress-matrix td,.v05 .lab-stress-matrix th{padding:10px 7px;text-align:center;font-size:11px}
+.v05 .lab-stress-matrix th:first-child{text-align:left;white-space:nowrap}
+.v05 .lab-stress-alert{background:#fff1e8;color:#a15b34;font-weight:700}
+.v05 .lab-stress-ok{background:#f0f5f5;color:#3d746b}
+.v05 .lab-robust-notes{border-top:1px solid #e4e9ec;margin-top:18px;padding-top:5px}
+.v05 .lab-robust-notes p{display:flex;gap:8px;align-items:flex-start;font-size:10px;color:#748993;line-height:1.65;margin:9px 0}
+.v05 .lab-robust-notes svg{flex-shrink:0;margin-top:2px;color:#967d59}
+@media(max-width:700px){.v05 .lab-robust-grid{grid-template-columns:1fr}.v05 .lab-robust-option{padding:13px}}
