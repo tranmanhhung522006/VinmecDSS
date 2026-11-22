@@ -17,6 +17,10 @@ enum DecisionAction {
   APPROVED
   REJECTED
 }
+enum StudyKind {
+  CAPACITY
+  SHIFT
+}
 enum InsightSource {
   OPENAI
   RULE_BASED_FALLBACK
@@ -31,6 +35,8 @@ model User {
   active Boolean @default(true)
   decisions Decision[]
   scenarios Scenario[]
+  studies DecisionStudy[] @relation("DecisionStudyAuthor")
+  studyReviews StudyReview[] @relation("StudyReviewer")
   createdAt DateTime @default(now())
 }
 model Department {
@@ -102,4 +108,31 @@ model Insight {
   text String @db.Text
   createdAt DateTime @default(now())
   scenario Scenario @relation(fields: [scenarioId], references: [id])
+}
+/** Immutable server-calculated analysis snapshot, separate from legacy 3-option scenarios. */
+model DecisionStudy {
+  id String @id @default(uuid())
+  kind StudyKind
+  name String
+  authorId String
+  inputSnapshot Json
+  outputSnapshot Json
+  modelId String
+  modelVersion String
+  createdAt DateTime @default(now())
+  author User @relation("DecisionStudyAuthor", fields: [authorId], references: [id])
+  review StudyReview?
+
+  @@index([createdAt])
+  @@index([kind, createdAt])
+}
+model StudyReview {
+  id String @id @default(uuid())
+  studyId String @unique
+  actorId String
+  action DecisionAction
+  rationale String
+  createdAt DateTime @default(now())
+  study DecisionStudy @relation(fields: [studyId], references: [id])
+  actor User @relation("StudyReviewer", fields: [actorId], references: [id])
 }
