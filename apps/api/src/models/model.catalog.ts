@@ -1,0 +1,21 @@
+/**
+ * Model Management subsystem: a read-only catalog of ACTUALLY implemented
+ * planning models. Model metadata must match the production code and limitations.
+ */
+export type ModelRegistryItem={
+  id:string;version:string;name:string;family:'FORECAST'|'VALIDATION'|'SCENARIO'|'OPTIMIZATION'|'ADVISORY';
+  type:'DETERMINISTIC'|'STATISTICAL_BASELINE'|'OPTIONAL_LLM';implementation:string;
+  inputs:string[];outputs:string[];qualityControl:string;limitations:string;
+  approvalAuthority:'HUMAN_MANAGER'|'NONE';
+};
+export const MODEL_CATALOG:readonly ModelRegistryItem[]=Object.freeze([
+  {id:'forecast.weekday-mean',version:'1.0.0',name:'Weekday Mean (4)',family:'FORECAST',type:'STATISTICAL_BASELINE',implementation:'dss.engine.ts / forecastByWeekday',inputs:['Synthetic aggregate visits','Target date'],outputs:['Predicted visits','Sample count','Model name'],qualityControl:'Walk-forward MAE, MAPE, RMSE and bias in forecast.metrics.ts',limitations:'Not trained on real hospitals; no specialty, holidays or waiting-time prediction.',approvalAuthority:'NONE'},
+  {id:'forecast.trailing-average',version:'1.0.0',name:'Trailing Moving Average (7)',family:'FORECAST',type:'STATISTICAL_BASELINE',implementation:'dss.engine.ts / forecastByWeekday',inputs:['Latest synthetic aggregate visits'],outputs:['Predicted visits','Training days'],qualityControl:'Used when fewer than two matching weekdays exist; evaluated in rolling backtest',limitations:'Simple baseline only; seasonal patterns and special events not represented.',approvalAuthority:'NONE'},
+  {id:'validation.walk-forward',version:'1.0.0',name:'Rolling Forecast Backtest',family:'VALIDATION',type:'DETERMINISTIC',implementation:'forecast.metrics.ts / rollingForecastBacktest',inputs:['Chronological synthetic visit aggregates'],outputs:['MAE','MAPE','RMSE','Bias','Holdout count'],qualityControl:'Each test forecast uses data strictly before its target date',limitations:'Backtest on synthetic records does not establish accuracy in a hospital.',approvalAuthority:'NONE'},
+  {id:'scenario.staffing-v1',version:'1.0.0',name:'Three-Option Scenario Ranking',family:'SCENARIO',type:'DETERMINISTIC',implementation:'dss.engine.ts / compareAlternatives',inputs:['Demand','Current doctors','Room bounds','Assumed productivity','Extra cost'],outputs:['Three alternatives','Ranking','Shortfalls'],qualityControl:'Hard eligibility checks and existing deterministic unit tests',limitations:'Evaluates only current, +1 and +2 doctors; academic scoring heuristic.',approvalAuthority:'HUMAN_MANAGER'},
+  {id:'optimization.capacity-enumeration',version:'1.0.0',name:'Capacity Planning Enumeration',family:'OPTIMIZATION',type:'DETERMINISTIC',implementation:'planning.engine.ts / optimizeCapacity',inputs:['Demand','Staff availability','Rooms','Productivity','Utilization target'],outputs:['All bounded staffing options','Lexicographic recommendation','Demand sensitivity'],qualityControl:'Boundary validation, hard constraints, exhaustive bounded search and six unit tests',limitations:'One integer staffing variable; not shift scheduling, CP-SAT or clinically validated.',approvalAuthority:'NONE'},
+  {id:'advisory.openai-assisted',version:'1.0.0',name:'Evidence-grounded AI Advisor',family:'ADVISORY',type:'OPTIONAL_LLM',implementation:'ai.advisor.ts + ai.workflow.ts + dss.controller.ts',inputs:['Computed synthetic scenario evidence','Untrusted staff question'],outputs:['Qualitative explanation','Optional hypothetical What-if narrative'],qualityControl:'Server-side numeric evidence, structured parsing, fallback and model-call limits',limitations:'AI wording is not fact-proven or actionable medical advice; requires human verification.',approvalAuthority:'HUMAN_MANAGER'}
+]);
+export function getModelCatalog(){
+ return {catalogVersion:'2026-11-23',classification:'SYNTHETIC_AGGREGATES',clinicalUseAllowed:false,models:MODEL_CATALOG};
+}
