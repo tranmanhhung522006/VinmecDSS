@@ -1,0 +1,49 @@
+name: Import Vinmec DSS v0.2.1 source
+on:
+  push:
+    branches:
+      - feature/vinmec-dss-v0.2-professional-fullstack
+    paths:
+      - '.vinmec-import/part6.txt'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Reconstruct and verify approved source archive
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64,brotli,tarfile,io,hashlib,pathlib,shutil
+          root=pathlib.Path('.')
+          payload=''.join((root/'.vinmec-import'/f'part{i}.txt').read_text() for i in range(1,7))
+          packed=base64.b64decode(payload,validate=True)
+          expected='ce2a16ee6bae9d6e9337eb221387838c4614bbb84b11d911e152265e60c203cc'
+          assert hashlib.sha256(packed).hexdigest()==expected, 'Archive hash mismatch'
+          raw=brotli.decompress(packed)
+          with tarfile.open(fileobj=io.BytesIO(raw),mode='r:') as tf:
+            files=[m for m in tf.getmembers() if m.isfile()]
+            assert len(files)==42, 'Unexpected source file count'
+            assert all(m.name and not m.name.startswith('/') and '..' not in pathlib.PurePosixPath(m.name).parts for m in files)
+            for name in ['apps','frontend','backend','database','docs']:
+              if pathlib.Path(name).exists(): shutil.rmtree(name)
+            for m in files:
+              dest=root/m.name
+              dest.parent.mkdir(parents=True,exist_ok=True)
+              dest.write_bytes(tf.extractfile(m).read())
+          shutil.rmtree('.vinmec-import')
+          (root/'IMPORT_PROVENANCE.md').write_text('Imported Vinmec DSS v0.2.1 from user-owned generated ZIP. SHA256 brotli archive: '+expected+'\n')
+          PY
+      - name: Commit source to feature branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Import Vinmec DSS v0.2.1 professional full-stack source"
+          git push
