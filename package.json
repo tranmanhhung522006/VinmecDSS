@@ -1,6 +1,11 @@
 {
-  "name": "vinmec-dss-prototype", "private": true, "version": "0.1.0",
-  "workspaces": ["apps/api", "apps/web"],
+  "name": "vinmec-dss-prototype",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
     "dev:api": "npm run dev -w @vinmec/api",
     "dev:web": "npm run dev -w @vinmec/web",
@@ -8,7 +13,12 @@
     "test": "npm run test -w @vinmec/api",
     "db:generate": "npm run prisma:generate -w @vinmec/api",
     "db:push": "npm run prisma:push -w @vinmec/api",
-    "db:seed": "npm run prisma:seed -w @vinmec/api"
+    "db:seed": "npm run prisma:seed -w @vinmec/api",
+    "dev:frontend": "npm run dev -w @vinmec/web",
+    "dev:backend": "npm run dev -w @vinmec/api",
+    "db:validate": "npm run prisma:validate -w @vinmec/api"
   },
-  "engines": {"node": ">=20"}
+  "engines": {
+    "node": ">=20"
+  }
 }
