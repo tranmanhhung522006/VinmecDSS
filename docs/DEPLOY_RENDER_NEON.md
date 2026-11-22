@@ -5,7 +5,7 @@ This guide uses the repository `tranmanhhung522006/VinmecDSS`. Use a **separate 
 ## 1. Create a Neon PostgreSQL project
 
 1. Log in to https://console.neon.tech/ and choose **New Project**. Suggested name: `vinmec-dss`.
-2. Choose a region geographically near your Render service, ideally Singapore when available.
+2. Choose a region geographically near your Render service, Ohio (AWS US East 2), matching the Neon project shown in the setup screenshots.
 3. In Neon Dashboard > **Connect**, copy the **pooled connection string** (hostname contains `-pooler`) as `DATABASE_URL`.
 4. Disable connection pooling in the connection dialog and copy the **direct connection string** as `DIRECT_URL`.
 5. Ensure both strings include the SSL query parameter supplied by Neon (e.g., `sslmode=require`). **Never share or commit these strings**.
