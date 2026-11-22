@@ -11,8 +11,15 @@ async function main(){
     ['analyst@demo.local','Data Analyst','ANALYST'],
     ['admin@demo.local','System Administrator','ADMIN']
   ];
-  const password=process.env.DEMO_PASSWORD||'VinmecDemo2026!';
-  for(const [email,name,role] of users) await db.user.upsert({where:{email},update:{},create:{email,name,role,passwordHash:await hash(password,10)}});
+  // Production never creates publicly documented login credentials.
+  const password=process.env.DEMO_PASSWORD?.trim() || (process.env.NODE_ENV==='production' ? '' : 'VinmecDemo2026!');
+  if (password) {
+    if (password.length < 16) throw new Error('DEMO_PASSWORD must have at least 16 characters');
+    const passwordHash=await hash(password,10);
+    for (const [email,name,role] of users) {
+      await db.user.upsert({where:{email},update:{name,role,passwordHash},create:{email,name,role,passwordHash}});
+    }
+  } else console.log('Production: no management users seeded; configure DEMO_PASSWORD to enable authenticated features.');
   const anchor=new Date('2026-11-23T00:00:00Z');
   for(let ago=56;ago>=1;ago--){
     const day=new Date(anchor);day.setUTCDate(day.getUTCDate()-ago);
@@ -23,7 +30,6 @@ async function main(){
       await db.visitAggregate.upsert({where:{departmentId_day_slot:{departmentId:dep.id,day,slot}},update:{},create:{departmentId:dep.id,day,slot,visits:Math.round(base*factor)}});
     }
   }
-  console.log('Seed completed. Users:',users.map(u=>u[0]).join(', '));
-  console.log('Demo password:',password);
+  console.log('Synthetic seed completed. No passwords are logged.');
 }
 main().catch(e=>{console.error(e);process.exitCode=1}).finally(()=>db.$disconnect());
