@@ -40,8 +40,13 @@ export default function App(){
   const isVisitor=session.user.role==='VIEWER';
   function resetPrivateState(){setScenarios([]);setSelected(null);setForecast(null);setInsight(null);setAiStatus(null);setAiMessages([]);setError('');setNotice('');setTab('overview');setBusy(false);setSidebarOpen(false);}
   // Direct account switch: one click always displays the login screen.
-  function switchAccount(){revision.current++;clearSession();setSession(visitor);resetPrivateState();setSummary(null);setShowLogin(true);}
-  function publicPreview(){revision.current++;clearSession();setSession(visitor);resetPrivateState();setSummary(null);setShowLogin(false);}
+  function revokeActiveSession(){
+    // Revoke on the server, but never trap the user in a broken session if offline.
+    const oldToken=session.token;
+    if(oldToken)void request<{revoked:boolean}>('/auth/logout','POST',{},oldToken).catch(()=>null);
+  }
+  function switchAccount(){revokeActiveSession();revision.current++;clearSession();setSession(visitor);resetPrivateState();setSummary(null);setShowLogin(true);}
+  function publicPreview(){revokeActiveSession();revision.current++;clearSession();setSession(visitor);resetPrivateState();setSummary(null);setShowLogin(false);}
   function login(tok:string,user:StaffUser){revision.current++;resetPrivateState();const data={token:tok,user};saveSession(data);setSession(data);setShowLogin(false);setNotice('Đăng nhập thành công: '+user.name+'.');}
   async function refresh(t=token,expected=revision.current){
     const [sum,rows]=t?await Promise.all([
