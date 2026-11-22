@@ -1,0 +1,10 @@
+export type AiIntent={kind:'explain'|'compare'|'risk'|'decision_brief'|'what_if'|'clarify';demandChangePercent:number|null;absoluteDemand:number|null;doctorDelta:number|null;roomDelta:number|null;topic:string};
+export type AiAlternative={doctors:number;capacity:number;gap:number;surplus:number;addedCostVnd:number;eligible:boolean;servesDemand:boolean};
+export type AiPreview={originalDemand:number;projectedDemand:number;originalDoctors:number;hypothetical:true;persisted:false;
+  changes:{demandChangePercent:number|null;absoluteDemand:number|null;doctorDelta:number|null;roomDelta:number|null};
+  assumptions:{currentDoctors:number;availableDoctors:number;rooms:number;visitsPerDoctor:number;extraDoctorCost:number};
+  alternatives:AiAlternative[];recommended:AiAlternative|null;requestedOption:{doctors:number;capacity:number;gap:number;eligible:boolean;addedCostVnd:number}|null};
+export type AiEvidence={currentDemand:number;originalRecommendation:AiAlternative|null;currentAssumptions:object;comparison:AiPreview|null;note:string};
+export type AiAnswer={source:'OPENAI'|'RULE_BASED_FALLBACK';reason:string;answer:string;warnings:string[];nextActions:string[];
+  intent:AiIntent;intentSource:string;evidence:AiEvidence;disclaimer:string;cached:boolean};
+export type AiMessage={role:'user'|'assistant';text:string;response?:AiAnswer;id:number};
