@@ -5,6 +5,7 @@ import {compare,} from 'bcryptjs';
 import {IsString, IsOptional, IsNumber, Min, Max, MaxLength, IsInt, IsIn} from 'class-validator';
 import OpenAI from 'openai';
 import {compareAlternatives,computeDemand,forecastByWeekday} from './dss.engine';
+import {optimizeCapacity} from './planning.engine';
 import {LoginFailureLimiter,normalizeLoginEmail} from './auth.logic';
 import {rollingForecastBacktest} from './forecast.metrics';
 import {buildEvidence,fallbackAdvice,parseAdvisory,advisoryInstructions} from './ai.advisor';
@@ -19,6 +20,15 @@ class ScenarioDto {
   @IsString() targetDay!:string;
   @IsInt() @Min(0) @Max(100000) baselineDemand!:number;
   @IsNumber() @Min(-100) @Max(300) growthPercent!:number;
+}
+class CapacityLabDto {
+  @IsInt() @Min(0) @Max(100000) baselineDemand!:number;
+  @IsNumber() @Min(-100) @Max(300) growthPercent!:number;
+  @IsInt() @Min(50) @Max(100) targetUtilizationPercent!:number;
+  @IsOptional() @IsInt() @Min(1) @Max(40) availableDoctors?:number;
+  @IsOptional() @IsInt() @Min(1) @Max(40) rooms?:number;
+  @IsOptional() @IsInt() @Min(1) @Max(200) visitsPerDoctor?:number;
+  @IsOptional() @IsInt() @Min(0) @Max(100000000) extraDoctorCost?:number;
 }
 class DecisionDto {
   @IsString() scenarioId!:string;
@@ -113,6 +123,20 @@ class PublicController {
     return {id:'public-preview',title:input.title,targetDay:input.targetDay,baselineDemand:input.baselineDemand,growthPercent:input.growthPercent,demand,assumptions,alternatives:result.alternatives,
       recommendation:{recommended:result.recommended,criteria:result.criteria},decision:null,createdAt:new Date().toISOString(),synthetic:true,persisted:false};
   }
+  @Post('capacity-lab') async capacityLab(@Body() input:CapacityLabDto){
+    const d=await this.department();
+    const demand=computeDemand(input.baselineDemand,input.growthPercent);
+    const options=optimizeCapacity({
+      demand,currentDoctors:d.activeDoctors,
+      availableDoctors:input.availableDoctors??d.availableDoctors,
+      rooms:input.rooms??d.rooms,
+      visitsPerDoctor:input.visitsPerDoctor??d.visitsPerDoctor,
+      extraDoctorCost:input.extraDoctorCost??d.extraDoctorCost,
+      targetUtilizationPercent:input.targetUtilizationPercent
+    });
+    return {...options,departmentName:d.name,baselineDemand:input.baselineDemand,growthPercent:input.growthPercent};
+  }
+
 }
 @Controller()
 class HealthController {
