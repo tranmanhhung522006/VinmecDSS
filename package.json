@@ -1,0 +1,14 @@
+{
+  "name": "vinmec-dss-prototype", "private": true, "version": "0.1.0",
+  "workspaces": ["apps/api", "apps/web"],
+  "scripts": {
+    "dev:api": "npm run dev -w @vinmec/api",
+    "dev:web": "npm run dev -w @vinmec/web",
+    "build": "npm run build -w @vinmec/api && npm run build -w @vinmec/web",
+    "test": "npm run test -w @vinmec/api",
+    "db:generate": "npm run prisma:generate -w @vinmec/api",
+    "db:push": "npm run prisma:push -w @vinmec/api",
+    "db:seed": "npm run prisma:seed -w @vinmec/api"
+  },
+  "engines": {"node": ">=20"}
+}

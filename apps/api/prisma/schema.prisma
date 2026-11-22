@@ -1,0 +1,88 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+
+enum Role { MANAGER COORDINATOR ANALYST ADMIN }
+enum DecisionAction { APPROVED REJECTED }
+enum InsightSource { OPENAI RULE_BASED_FALLBACK }
+
+model User {
+  id String @id @default(uuid())
+  name String
+  email String @unique
+  passwordHash String
+  role Role
+  active Boolean @default(true)
+  decisions Decision[]
+  scenarios Scenario[]
+  createdAt DateTime @default(now())
+}
+model Department {
+  id String @id @default(uuid())
+  name String @unique
+  availableDoctors Int @default(10)
+  activeDoctors Int @default(8)
+  rooms Int @default(10)
+  visitsPerDoctor Int @default(30)
+  extraDoctorCost Int @default(900000)
+  visits VisitAggregate[]
+  forecasts ForecastRun[]
+  scenarios Scenario[]
+}
+model VisitAggregate {
+  id String @id @default(uuid())
+  departmentId String
+  day DateTime @db.Date
+  slot String
+  visits Int
+  department Department @relation(fields: [departmentId], references: [id])
+  @@unique([departmentId, day, slot])
+  @@index([departmentId, day])
+}
+model ForecastRun {
+  id String @id @default(uuid())
+  departmentId String
+  targetDay DateTime @db.Date
+  model String
+  predictedVisits Int
+  trainingDays Int
+  explanation String
+  createdAt DateTime @default(now())
+  department Department @relation(fields: [departmentId], references: [id])
+}
+model Scenario {
+  id String @id @default(uuid())
+  departmentId String
+  authorId String
+  title String
+  targetDay DateTime @db.Date
+  baselineDemand Int
+  growthPercent Float
+  demand Int
+  assumptions Json
+  alternatives Json
+  recommendation Json
+  createdAt DateTime @default(now())
+  department Department @relation(fields: [departmentId], references: [id])
+  author User @relation(fields: [authorId], references: [id])
+  decision Decision?
+  insights Insight[]
+}
+model Decision {
+  id String @id @default(uuid())
+  scenarioId String @unique
+  actorId String
+  action DecisionAction
+  alternativeDoctors Int?
+  rationale String
+  createdAt DateTime @default(now())
+  scenario Scenario @relation(fields: [scenarioId], references: [id])
+  actor User @relation(fields: [actorId], references: [id])
+}
+model Insight {
+  id String @id @default(uuid())
+  scenarioId String
+  source InsightSource
+  text String @db.Text
+  createdAt DateTime @default(now())
+  scenario Scenario @relation(fields: [scenarioId], references: [id])
+}
