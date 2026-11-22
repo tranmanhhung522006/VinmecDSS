@@ -5,6 +5,7 @@ import {compare,} from 'bcryptjs';
 import {IsString, IsOptional, IsNumber, Min, Max, MaxLength, IsInt, IsIn} from 'class-validator';
 import OpenAI from 'openai';
 import {compareAlternatives,computeDemand,forecastByWeekday} from './dss.engine';
+import {rollingForecastBacktest} from './forecast.metrics';
 
 @Injectable()
 class Database extends PrismaClient implements OnModuleInit {async onModuleInit(){await this.$connect();}}
@@ -73,6 +74,17 @@ class PublicController {
     return {department:{name:d.name,activeDoctors:d.activeDoctors,availableDoctors:d.availableDoctors,rooms:d.rooms,visitsPerDoctor:d.visitsPerDoctor,extraDoctorCost:d.extraDoctorCost},latestRecordedVisits,
       capacity:d.activeDoctors*d.visitsPerDoctor,utilizationPercent:Math.round(latestRecordedVisits/(d.activeDoctors*d.visitsPerDoctor)*1000)/10,daily,
       disclaimer:'Synthetic demonstration data. Not actual Vinmec operations.'};
+  }
+  @Get('forecast-quality') async forecastQuality(){
+    const d=await this.department();
+    const records=await this.db.visitAggregate.findMany({where:{departmentId:d.id},orderBy:{day:'asc'}});
+    const byDate=new Map<string,{day:Date;visits:number}>();
+    for(const record of records){
+      const key=record.day.toISOString().slice(0,10);
+      const current=byDate.get(key);
+      byDate.set(key,{day:record.day,visits:(current?.visits??0)+record.visits});
+    }
+    return {...rollingForecastBacktest([...byDate.values()]),synthetic:true};
   }
   @Post('forecast') async forecast(@Body() input:ForecastDto){
     const d=await this.department(),targetDay=parseDate(input.targetDay);
