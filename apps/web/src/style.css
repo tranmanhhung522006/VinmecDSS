@@ -278,3 +278,21 @@
 .v05 .lab-limitations svg{color:#a27c51;flex-shrink:0;margin-top:1px}
 @media(max-width:1180px){.v05 .lab-grid{grid-template-columns:1fr}.v05 .lab-form{position:static}}
 @media(max-width:700px){.v05 .lab-intro{flex-direction:column;align-items:stretch;padding:17px}.v05 .lab-intro-note{max-width:none}.v05 .lab-fields{grid-template-columns:1fr}.v05 .lab-metrics{gap:8px}.v05 .lab-metrics>.card{padding:12px}.v05 .lab-metrics strong{font-size:22px}.v05 .lab-chart{height:220px}}
+
+
+/* Model Management transparency — DSS v0.8 */
+.v05 .model-catalog{margin-top:18px}
+.v05 .catalog-banner{display:flex;align-items:flex-start;gap:10px;padding:13px 14px;background:#f5f8f9;border:1px solid #e1e9ec;border-radius:8px;color:#536f7d;font-size:11px;line-height:1.6;margin-bottom:15px}
+.v05 .catalog-banner svg{color:#35798a;flex-shrink:0}
+.v05 .catalog-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.v05 .catalog-item{background:#fff;border:1px solid #e2e9ed;border-radius:9px;padding:18px;min-width:0}
+.v05 .catalog-top{display:flex;justify-content:space-between;align-items:center;gap:10px;color:#607988;font-size:10px;font-weight:700;letter-spacing:.3px}
+.v05 .catalog-top small{color:#93a3ad}
+.v05 .catalog-item h3{margin:12px 0 6px;font-size:14px;color:#2d4d5e}
+.v05 .catalog-type{font-size:10px;color:#5c8190;margin-bottom:15px}
+.v05 .catalog-item dl{margin:0}.v05 .catalog-item dt{font-size:10px;color:#6b8896;font-weight:750;margin:12px 0 5px}
+.v05 .catalog-item dd{font-size:11px;line-height:1.6;color:#657d8b;margin:0}
+.v05 .catalog-source{display:flex;align-items:center;gap:7px;border-top:1px solid #edf0f3;margin-top:15px;padding-top:12px;color:#8095a1;min-width:0}
+.v05 .catalog-source code{white-space:normal;overflow-wrap:anywhere;font-size:10px;color:#617e8c}
+.v05 .model-catalog>.tiny{margin:16px 0 0}
+@media(max-width:800px){.v05 .catalog-grid{grid-template-columns:1fr}}
