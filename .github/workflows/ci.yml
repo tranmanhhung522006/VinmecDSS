@@ -5,7 +5,7 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    # Only syntactically valid local URLs. No live DB or credentials used by static CI.
+    # Valid schema URLs only. CI never connects to a real database or uses deployment secrets.
     env:
       DATABASE_URL: postgresql://ci:ci@localhost:5432/vinmec_ci?schema=public
       DIRECT_URL: postgresql://ci:ci@localhost:5432/vinmec_ci?schema=public
