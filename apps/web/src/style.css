@@ -38,3 +38,34 @@
 .nav-item:focus-visible,.signout:focus-visible,.primary:focus-visible,.secondary:focus-visible,.icon-button:focus-visible,.click-row:focus-visible{outline:2px solid #70a7c2;outline-offset:3px}
 @media (max-width:1080px){.pulse-grid{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:20px}.pulse-metric:nth-child(2){border-right:0;padding-right:0}.pulse-metric:nth-child(3){padding-left:0}}
 @media (max-width:720px){.pulse-heading{flex-direction:column}.pulse-grid,.quality-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.pulse-metric{border:1px solid #e8edf1!important;border-radius:6px;padding:13px!important}.pulse-metric>strong{font-size:20px}.quality-grid>div{padding:12px}.quality-grid strong{font-size:20px}.capacity-panel{padding:12px}.capacity-chart{height:190px}.capacity-foot{flex-direction:column;gap:8px}.history-toolbar{flex-direction:column;align-items:stretch}.history-search,.history-filter{width:100%}.history-count{margin-left:0}.history-heading{align-items:flex-start;flex-direction:column}}
+
+
+/* Guided product journey + resilient staff authentication */
+.guided-workflow{margin-bottom:19px}
+.guided-workflow .panel-head{align-items:center}
+.workflow-mode{background:#eaf2f5;color:#32667a;border:1px solid #d3e4eb;border-radius:50px;padding:8px 12px;white-space:nowrap;font-size:11px;font-weight:700}
+.guided-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.guided-step{text-align:left;background:#fafcfd;border:1px solid #e2e9ed;border-radius:8px;padding:15px 14px;min-height:161px;display:flex;flex-direction:column;align-items:stretch;color:#263e4e;transition:background .15s,border-color .15s}
+.guided-step:hover{background:#f3f8fa;border-color:#9ac3d0}
+.guided-step.is-current{background:#f2f8fa;border-color:#b7d3dd}
+.guided-top{display:flex;align-items:center;justify-content:space-between;color:#477e91;margin-bottom:17px}
+.guided-number{font-weight:800;color:#8b9fab;font-size:12px;letter-spacing:1px}
+.guided-step strong{font-size:13px;margin-bottom:7px}
+.guided-step small{font-size:11px;line-height:1.55;color:#718594;flex:1}
+.guided-action{display:flex;align-items:center;gap:6px;margin-top:15px;color:#39758a;font-size:11px;font-weight:750}
+.guided-note{border-top:1px solid #e8edf0;padding-top:13px;margin:16px 0 0;font-size:11px;color:#6b7c89;line-height:1.7}
+.guided-note strong{color:#315266}
+.login-box .login-status{border:1px solid #e1e8ec;background:#f7f9fb;border-radius:7px;padding:12px;margin-bottom:22px;display:flex;align-items:flex-start;gap:9px;font-size:11px;line-height:1.6;color:#586d7b}
+.login-box .login-status.online{background:#eff8f2;border-color:#d8e9df;color:#34734d}
+.login-box .login-status.offline{background:#fff4ec;border-color:#f0d9c4;color:#956038}
+.login-box .login-status svg{flex-shrink:0;margin-top:1px}
+.login-box .password-field{display:flex;align-items:center;position:relative;margin-top:8px}
+.login-box .password-field input{margin-top:0;padding-right:48px}
+.login-box .password-field button{background:transparent;border:0;position:absolute;right:8px;top:50%;transform:translateY(-50%);color:#637c8c;padding:7px;display:grid;place-items:center}
+.login-box .password-field button:focus-visible{outline:2px solid #467c93;border-radius:4px}
+.login-hint{font-size:10px;line-height:1.5;color:#8a9ba7;display:block;margin-top:7px;font-weight:400}
+.login-foot{display:flex;align-items:flex-start;gap:8px;margin:16px 0 20px}
+.login-foot svg{flex-shrink:0;margin-top:2px}
+.login-box .alert.error{font-size:11px;line-height:1.5}
+@media(max-width:1100px){.guided-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.guided-step{min-height:136px}}
+@media(max-width:720px){.guided-workflow .panel-head{flex-direction:column;align-items:flex-start}.guided-grid{grid-template-columns:1fr}.guided-step{min-height:112px}.guided-top{margin-bottom:9px}.guided-action{margin-top:9px}}
