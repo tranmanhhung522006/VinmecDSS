@@ -5,14 +5,16 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # Only syntactically valid local URLs. No live DB or credentials used by static CI.
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/vinmec_ci?schema=public
+      DIRECT_URL: postgresql://ci:ci@localhost:5432/vinmec_ci?schema=public
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: npm install --include=dev
-        env:
-          NODE_ENV: production
       - run: npm run db:generate
       - run: npm run db:validate
       - run: npm run test
