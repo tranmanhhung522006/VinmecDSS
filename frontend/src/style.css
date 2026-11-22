@@ -317,3 +317,16 @@
 .v05 .lab-robust-notes p{display:flex;gap:8px;align-items:flex-start;font-size:10px;color:#748993;line-height:1.65;margin:9px 0}
 .v05 .lab-robust-notes svg{flex-shrink:0;margin-top:2px;color:#967d59}
 @media(max-width:700px){.v05 .lab-robust-grid{grid-template-columns:1fr}.v05 .lab-robust-option{padding:13px}}
+
+/* v0.11 shift allocation: compact, accessible enterprise inputs */
+.v05 .shift-lab .shift-section-label{margin:21px 0 10px}
+.v05 .shift-input-group{border-top:1px solid #e5eaed;padding:13px 0 4px}
+.v05 .shift-input-group h3{font-size:13px;margin:0 0 10px;color:#344e5d}
+.v05 .shift-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0 0}
+.v05 .shift-comparison>div{padding:17px;border:1px solid #e1e8ec;background:#fafcfc;border-radius:7px;display:flex;flex-direction:column;gap:9px}
+.v05 .shift-comparison>div:last-child{background:#f1f7f7;border-color:#d6e6e7}
+.v05 .shift-comparison small{font-size:10px;color:#68808d;font-weight:700;line-height:1.5}
+.v05 .shift-comparison strong{font-size:17px;color:#2e5364}
+.v05 .shift-comparison span{font-size:11px;color:#718793}
+.v05 .shift-alert{color:#a55c38;font-weight:700}
+@media(max-width:700px){.v05 .shift-comparison{grid-template-columns:1fr}}

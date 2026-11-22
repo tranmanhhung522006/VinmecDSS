@@ -3,7 +3,7 @@ import test from 'node:test';
 import {getModelCatalog,MODEL_CATALOG} from '../src/models/model.catalog';
 test('model registry contains distinct, documented and safely scoped models',()=>{
   const ids=MODEL_CATALOG.map(x=>x.id);
-  assert.equal(ids.length,7);
+  assert.equal(ids.length,8);
   assert.equal(new Set(ids).size,ids.length);
   for(const x of MODEL_CATALOG){
     assert.ok(x.version&&x.inputs.length&&x.outputs.length);

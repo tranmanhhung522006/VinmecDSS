@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState,type ReactNode,type FormEvent} from 'react';
 import StaffLogin from './components/StaffLogin';
 import CapacityPlanningLab from './components/CapacityPlanningLab';
+import ShiftAllocationLab from './components/ShiftAllocationLab';
 import ModelCatalog from './components/ModelCatalog';
 import WorkflowGuide from './components/WorkflowGuide';
 import OperationsDashboard from './components/OperationsDashboard';
@@ -17,7 +18,7 @@ type Alt={doctors:number;capacity:number;gap:number;surplus:number;utilizationPe
 type Scenario={id:string;title:string;targetDay:string;baselineDemand:number;growthPercent:number;demand:number;assumptions:{currentDoctors:number;availableDoctors:number;rooms:number;visitsPerDoctor:number;extraDoctorCost:number};alternatives:Alt[];recommendation:{recommended:Alt|null;criteria:string};decision?:{action:'APPROVED'|'REJECTED';alternativeDoctors:number|null;rationale:string;actor?:{name:string};createdAt:string}|null;createdAt:string;author?:{name:string};insights?:{text:string;source:string}[]};
 type Summary={department:{name:string;activeDoctors:number;availableDoctors:number;rooms:number;visitsPerDoctor:number;extraDoctorCost:number};latestRecordedVisits:number;capacity:number;utilizationPercent:number;daily:{day:string;visits:number}[];disclaimer:string};
 type Forecast={predictedVisits:number;model:string;trainingDays:number;explanation:string;targetDay:string};
-type Tab='overview'|'scenario'|'capacity'|'ai'|'history'|'methodology';
+type Tab='overview'|'scenario'|'capacity'|'shifts'|'ai'|'history'|'methodology';
 const money=(n:number)=>new Intl.NumberFormat('en-US').format(n)+' ₫';
 function Pill({children,kind='neutral'}:{children:ReactNode,kind?:'neutral'|'good'|'bad'|'info'}){return <span className={'pill '+kind}>{children}</span>}
 export default function App(){
@@ -144,6 +145,7 @@ export default function App(){
     ['overview','Tổng quan điều hành',<BarChart3 size={18}/>],
     ['scenario','Dự báo & mô phỏng',<GitBranch size={18}/>],
     ['capacity','Capacity Planning Lab',<SlidersHorizontal size={18}/>],
+    ['shifts','Phân bổ bác sĩ-ca',<CalendarClock size={18}/>],
     ['ai','AI hỗ trợ quyết định',<BrainCircuit size={18}/>],
     ...(!isVisitor?[['history','Lịch sử quyết định',<ClipboardCheck size={18}/>] as [Tab,string,ReactNode]]:[]),
     ['methodology','Phương pháp & quản trị AI',<FileText size={18}/>]
@@ -168,7 +170,7 @@ export default function App(){
         <div className="top-actions"><span className="dss-tag blue">SYNTHETIC DATA</span><button type="button" className="top-account" onClick={switchAccount}><LogOut size={15}/>{isVisitor?'Đăng nhập':'Đổi tài khoản'}</button><button type="button" className="mobile-menu" onClick={()=>setSidebarOpen(o=>!o)} aria-label="Mở menu">☰</button></div>
       </header>
       <main className="main"><div className="page-head"><div><div className="eyebrow">HOSPITAL OPERATIONS · PROPOSED CASE STUDY</div>
-        <h1>{tab==='overview'?'Điều hành khám ngoại trú':tab==='scenario'?'Dự báo & phân bổ nguồn lực':tab==='capacity'?'Capacity Planning Lab':tab==='history'?'Hồ sơ quyết định':tab==='ai'?'Trung tâm AI hỗ trợ quyết định':'Phương pháp & quản trị AI'}</h1>
+        <h1>{tab==='overview'?'Điều hành khám ngoại trú':tab==='scenario'?'Dự báo & phân bổ nguồn lực':tab==='capacity'?'Capacity Planning Lab':tab==='shifts'?'Phân bổ nguồn lực theo ca':tab==='history'?'Hồ sơ quyết định':tab==='ai'?'Trung tâm AI hỗ trợ quyết định':'Phương pháp & quản trị AI'}</h1>
         <p className="muted">Dữ liệu minh họa cho nghiên cứu học thuật; không phải phần mềm chính thức của Vinmec.</p></div><Pill kind="info">{isVisitor?'XEM THỬ':session.user.role}</Pill></div>
   {error&&<div className="alert error"><AlertCircle size={17}/>{error}<button onClick={()=>setError('')} className="close-alert">×</button></div>}{notice&&<div className="alert success"><CheckCircle2 size={17}/>{notice}<button onClick={()=>setNotice('')} className="close-alert">×</button></div>}
   {(tab==='overview'||tab==='scenario')&&<WorkflowGuide role={session.user.role} current={tab} hasScenario={!!selected} hasDecision={!!selected?.decision} onNavigate={navigate}/>}
@@ -177,6 +179,7 @@ export default function App(){
     onRefresh={()=>void doAction(async expected=>{await refresh(token,expected);if(expected===revision.current)setNotice('Đã cập nhật dữ liệu từ backend.');})}
     onSelect={item=>{const full=scenarios.find(s=>s.id===item.id);if(full)void selectScenario(full)}}/>}
   {tab==='capacity'&&<CapacityPlanningLab department={summary?.department??null}/>}
+  {tab==='shifts'&&<ShiftAllocationLab/>}
   {tab==='ai'&&<AiWorkspace
     scenarios={scenarios} selected={selected} messages={aiMessages} status={aiStatus}
     visitor={isVisitor} busy={busy} question={question} onQuestion={setQuestion}

@@ -1,9 +1,10 @@
 import {Controller,Get,Post,Body,BadRequestException,ServiceUnavailableException} from '@nestjs/common';
 import {Database} from '../../infrastructure/database';
-import {ForecastDto,ScenarioDto,CapacityLabDto} from '../../contracts/dto';
+import {ForecastDto,ScenarioDto,CapacityLabDto,ShiftAllocationDto} from '../../contracts/dto';
 import {parseDate} from '../../shared/request-context';
 import {compareAlternatives,computeDemand,forecastByWeekday} from '../../dss.engine';
 import {optimizeCapacity} from '../../planning.engine';
+import {optimizeShiftAllocation} from '../../shift.engine';
 import {analyzeDecisionRobustness} from '../../robustness.engine';
 import {rollingForecastBacktest} from '../../forecast.metrics';
 import {getModelCatalog} from '../../models/model.catalog';
@@ -63,6 +64,12 @@ export class PublicController {
       targetUtilizationPercent:input.targetUtilizationPercent
     });
     return {...options,robustness:analyzeDecisionRobustness(options.inputs,options.recommended.doctors),departmentName:d.name,baselineDemand:input.baselineDemand,growthPercent:input.growthPercent};
+  }
+
+  @Post('shift-allocation') shiftAllocation(@Body() input:ShiftAllocationDto){
+    // Stateless deterministic allocation. No patient records or database writes.
+    // ValidationPipe enforces nested, bounded three-window inputs before this method.
+    return optimizeShiftAllocation(input);
   }
 
 }
