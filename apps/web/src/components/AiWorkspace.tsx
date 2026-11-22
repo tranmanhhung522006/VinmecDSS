@@ -1,83 +1,98 @@
-import {BrainCircuit,CheckCircle2,ShieldCheck,Sparkles,ArrowRight,AlertTriangle,UserRound,Lightbulb,FileSearch} from 'lucide-react';
+import {BrainCircuit,ShieldCheck,Sparkles,ArrowRight,AlertTriangle,UserRound,Lightbulb,FileSearch,MessageSquareText,Calculator,Send,Clock3} from 'lucide-react';
+import type {AiMessage,AiPreview} from '../lib/ai.types';
 
 type Candidate={id:string;title:string;targetDay:string;demand:number;recommendation:{recommended:{doctors:number;capacity:number;gap:number;addedCostVnd:number}|null}};
-type Insight={text:string;source:string;reason?:string;evidence?:{demand:number;recommended?:{doctors:number}|null;warnings:string[]}};
 type AiStatus={configured:boolean;remaining:number;dailyLimit:number};
 type Props={
-  scenarios:Candidate[];selected:Candidate|null;insight:Insight|null;status:AiStatus|null;
+  scenarios:Candidate[];selected:Candidate|null;messages:AiMessage[];status:AiStatus|null;
   visitor:boolean;busy:boolean;question:string;
   onQuestion:(value:string)=>void;onChoose:(id:string)=>void;onAnalyze:()=>void;
-  onScenario:()=>void;onLogin:()=>void;
+  onScenario:()=>void;onLogin:()=>void;onClear:()=>void;
 };
 const presetQuestions=[
-  'Điều gì có thể khiến phương án này thiếu công suất?',
-  'Đánh đổi giữa số bác sĩ và chi phí nhân sự là gì?',
-  'Manager cần kiểm tra gì trước khi phê duyệt?'
+  'Nếu nhu cầu tăng thêm 20% thì cần bao nhiêu bác sĩ?',
+  'Phương án nào cân bằng chi phí và công suất?',
+  'Nguy cơ quá tải lớn nhất trong kịch bản này?',
+  'Tạo bản nhận định ngắn cho Manager trước khi duyệt.'
 ];
 const reasonText:Record<string,string>={
   NOT_CONFIGURED:'Chưa cấu hình OPENAI_API_KEY trên backend.',
-  DISABLED:'AI đang bị tắt bởi hạn mức hệ thống.',
-  LIMIT_REACHED:'Đã đạt giới hạn lượt sử dụng AI.',
-  MODEL_UNAVAILABLE:'API hoặc mô hình AI hiện không phản hồi.',
-  UNVERIFIED_RESPONSE:'Phản hồi AI chưa đạt điều kiện kiểm chứng; dùng bản dự phòng.',
-  RULE_BASED:'Bản giải thích theo quy tắc có thể kiểm chứng.',
-  MODEL_RESPONSE:'Đã nhận phản hồi hợp lệ từ OpenAI.',
-  PUBLIC_PREVIEW:'Chế độ khách chỉ dùng giải thích theo quy tắc.'
+  DISABLED:'Tác vụ AI đã bị tắt theo giới hạn cấu hình.',
+  LIMIT_REACHED:'Đã đạt giới hạn lượt gọi AI.',
+  MODEL_UNAVAILABLE:'API hoặc mô hình AI không phản hồi.',
+  UNVERIFIED_RESPONSE:'Phản hồi AI không hợp lệ; DSS đã chuyển sang giải thích có kiểm chứng.',
+  RULE_BASED:'Giải thích theo thuật toán và dữ liệu DSS.',
+  MODEL_RESPONSE:'OpenAI đã phản hồi trong giới hạn bằng chứng.',
+  PUBLIC_PREVIEW:'Chế độ khách chỉ sử dụng thuật toán và giải thích có kiểm chứng.'
 };
-
-export default function AiWorkspace({scenarios,selected,insight,status,visitor,busy,question,onQuestion,onChoose,onAnalyze,onScenario,onLogin}:Props){
-  const authentic=insight?.source==='OPENAI';
+const vn=(n:number)=>new Intl.NumberFormat('vi-VN').format(n);
+function Preview({data}:{data:AiPreview}){
+  return <div className="ai-simulation" aria-label="Kết quả mô phỏng lại từ DSS">
+    <div className="ai-simulation-head"><Calculator size={17}/><div><strong>Kết quả What-if do DSS tính lại</strong><small>Chỉ xem thử · chưa lưu kịch bản · không phê duyệt</small></div></div>
+    <div className="ai-simulation-metrics">
+      <div><span>Nhu cầu gốc</span><strong>{vn(data.originalDemand)} lượt</strong></div>
+      <div><span>Nhu cầu mới</span><strong>{vn(data.projectedDemand)} lượt</strong></div>
+      <div><span>Phương án DSS xếp hạng cao nhất</span><strong>{data.recommended?data.recommended.doctors+' bác sĩ':'Chưa có phương án'}</strong></div>
+    </div>
+    <div className="table-wrap"><table><thead><tr><th>Bác sĩ</th><th>Công suất</th><th>Thiếu</th><th>Chi phí thêm</th><th>Khả thi</th></tr></thead>
+      <tbody>{data.alternatives.map(a=><tr key={a.doctors} className={a.doctors===data.recommended?.doctors?'highlight-row':''}>
+        <td><strong>{a.doctors}</strong></td><td>{vn(a.capacity)}</td><td>{vn(a.gap)}</td><td>{vn(a.addedCostVnd)} ₫</td><td>{a.eligible?'Có':'Vượt giới hạn'}</td>
+      </tr>)}</tbody></table></div>
+    {data.requestedOption&&<p className="ai-requested">Phương án nhân sự được hỏi: <strong>{data.requestedOption.doctors} bác sĩ</strong>, công suất {vn(data.requestedOption.capacity)} lượt, {data.requestedOption.eligible?'trong giới hạn':'vượt giới hạn nhân sự hoặc phòng khám'}.</p>}
+  </div>;
+}
+export default function AiWorkspace({scenarios,selected,messages,status,visitor,busy,question,onQuestion,onChoose,onAnalyze,onScenario,onLogin,onClear}:Props){
   const chosen=selected?.recommendation.recommended;
   return <div className="ai-workspace">
-    <section className="ai-hero card">
-      <div className="ai-hero-icon"><BrainCircuit size={28}/></div>
-      <div className="ai-hero-content"><div className="micro">AI-ASSISTED DECISION SUPPORT</div><h2>AI Operations Advisor</h2>
-        <p>AI hỗ trợ <strong>giải thích rủi ro, đánh đổi và các bước kiểm tra</strong> trước khi quản lý ra quyết định điều phối. Dữ liệu và số lượng bác sĩ đề xuất vẫn do DSS tính, không phải AI tự tạo.</p>
-        <div className="ai-hero-status">
-          <span className={'dss-tag '+(visitor?'neutral':status?.configured?'good':'warn')}>
-            {visitor?'Chế độ khách: chưa gọi OpenAI':status?.configured?'Đã đặt API key (chưa kiểm tra kết nối)':'OpenAI chưa được xác nhận cấu hình'}
-          </span>
-          {status?.configured&&<small>Hạn mức còn lại: {status.remaining}/{status.dailyLimit} lượt trong ngày</small>}
-        </div>
+    <section className="ai-hero card"><div className="ai-hero-icon"><BrainCircuit size={28}/></div>
+      <div className="ai-hero-content"><div className="micro">AI-ASSISTED OPERATIONS · SYNTHETIC DATA</div><h2>AI Operations Advisor</h2>
+        <p>Hỏi bằng tiếng Việt, thử tăng/giảm nhu cầu, so sánh phương án và trao đổi nhiều lượt. <strong>OpenAI hiểu và phân tích; DSS tính số liệu; Manager phê duyệt.</strong></p>
+        <div className="ai-hero-status"><span className={'dss-tag '+(visitor?'neutral':status?.configured?'good':'warn')}>
+          {visitor?'Đang dùng bản xem thử (không gọi OpenAI)':status?.configured?'Đã cấu hình khóa AI · chưa xác nhận lượt gọi thực tế':'Chưa xác nhận cấu hình API key'}
+        </span>{status?.configured&&<small>Hạn mức công khai: {status.remaining}/{status.dailyLimit} lượt model đã ghi nhận trong ngày</small>}</div>
       </div>
     </section>
     <div className="ai-feature-grid">
-      <article className="card ai-feature"><AlertTriangle size={19}/><strong>Nhận diện rủi ro</strong><p>Thiếu công suất, giới hạn phòng khám, sự không chắc chắn của dữ liệu giả lập.</p></article>
-      <article className="card ai-feature"><FileSearch size={19}/><strong>Phân tích đánh đổi</strong><p>Giải thích tác động của tăng nhân sự tới mức đáp ứng và chi phí bổ sung.</p></article>
-      <article className="card ai-feature"><Lightbulb size={19}/><strong>Đề xuất bước tiếp theo</strong><p>Gợi ý nội dung cần đối chiếu trước khi Manager chốt phương án.</p></article>
+      <article className="card ai-feature"><MessageSquareText size={19}/><strong>Hỏi đáp theo ngữ cảnh</strong><p>Hỏi tiếp về rủi ro, chi phí hoặc một phương án trong cuộc trao đổi.</p></article>
+      <article className="card ai-feature"><Calculator size={19}/><strong>Natural Language What-if</strong><p>Ví dụ “nếu tăng 20%”, hệ thống tính lại nhu cầu và nguồn lực ngay trên máy chủ.</p></article>
+      <article className="card ai-feature"><FileSearch size={19}/><strong>Decision brief</strong><p>Nhận định và các bước cần kiểm tra trước khi Manager ra quyết định.</p></article>
     </div>
-    <section className="card panel ai-workstation-panel">
-      <div className="panel-head"><div><div className="micro">THỰC HIỆN PHÂN TÍCH</div><h2>Chọn kịch bản và yêu cầu AI</h2><p className="muted">Các bước được minh bạch: chọn hồ sơ → xem dữ liệu DSS → hỏi AI → kiểm tra bằng chứng.</p></div><Sparkles size={19}/></div>
-      {scenarios.length>0&&!visitor&&<label className="field">Kịch bản đã lưu
+    <section className="card panel ai-workstation-panel"><div className="panel-head"><div><div className="micro">PHÂN TÍCH KỊCH BẢN</div><h2>Trao đổi cùng AI theo dữ liệu DSS</h2><p className="muted">Chọn kịch bản → đặt câu hỏi → kiểm tra kết quả DSS và nguồn phản hồi.</p></div><Sparkles size={19}/></div>
+      {scenarios.length>0&&!visitor&&<label className="field">Chọn kịch bản đã lưu
         <select value={selected&&scenarios.some(s=>s.id===selected.id)?selected.id:''} onChange={e=>onChoose(e.target.value)}>
           <option value="" disabled>— Chọn kịch bản —</option>
           {scenarios.map(s=><option key={s.id} value={s.id}>{s.title} · {s.targetDay.slice(0,10)} · {s.demand} lượt</option>)}
-        </select>
-      </label>}
+        </select></label>}
       {selected?<div className="ai-current-case">
-        <div><small>KỊCH BẢN ĐANG PHÂN TÍCH</small><strong>{selected.title}</strong><span>{selected.targetDay.slice(0,10)}</span></div>
-        <div><small>NHU CẦU GIẢ LẬP</small><strong>{selected.demand} lượt</strong><span>Do DSS tính toán</span></div>
-        <div><small>PHƯƠNG ÁN ĐỀ XUẤT</small><strong>{chosen?chosen.doctors+' bác sĩ':'Không có phương án hợp lệ'}</strong><span>{chosen?'Công suất '+chosen.capacity+' lượt':'Xem lại giới hạn nguồn lực'}</span></div>
-      </div>:<div className="ai-empty-case">
-        <BrainCircuit size={31}/><div><strong>Chưa có kịch bản để AI phân tích.</strong><p>Hãy tạo một mô phỏng về ngày dự kiến, lượt khám và nhân sự. Sau đó quay lại đây để nhận phân tích dựa trên dữ liệu cụ thể.</p></div>
-        <button type="button" className="primary" onClick={onScenario}>Tạo kịch bản <ArrowRight size={15}/></button>
-      </div>}
-      {visitor&&<div className="ai-guest-note"><UserRound size={17}/><span>AI OpenAI chỉ dành cho nhân sự đã xác thực để kiểm soát chi phí. Người xem thử vẫn có thể chạy kịch bản và nhận giải thích quy tắc.</span><button type="button" className="secondary" onClick={onLogin}>Đăng nhập nhân sự</button></div>}
+        <div><small>KỊCH BẢN HIỆN TẠI</small><strong>{selected.title}</strong><span>{selected.targetDay.slice(0,10)}</span></div>
+        <div><small>NHU CẦU GỐC</small><strong>{vn(selected.demand)} lượt</strong><span>Do DSS tính toán</span></div>
+        <div><small>PHƯƠNG ÁN HIỆN TẠI</small><strong>{chosen?chosen.doctors+' bác sĩ':'Không hợp lệ'}</strong><span>{chosen?'Công suất '+vn(chosen.capacity)+' lượt':'Xem lại nguồn lực'}</span></div>
+      </div>:<div className="ai-empty-case"><BrainCircuit size={31}/><div><strong>Chưa có kịch bản để phân tích.</strong><p>Vào Dự báo & mô phỏng, tính phương án, sau đó mở lại trung tâm AI.</p></div><button type="button" className="primary" onClick={onScenario}>Tạo kịch bản <ArrowRight size={15}/></button></div>}
+      {visitor&&<div className="ai-guest-note"><UserRound size={17}/><span>Chế độ khách chỉ dùng giải thích theo quy tắc. Đăng nhập nhân sự và lưu kịch bản để gọi OpenAI thật.</span><button type="button" className="secondary" onClick={onLogin}>Đăng nhập</button></div>}
       {selected&&<>
-        <label className="field">Câu hỏi dành cho AI<textarea rows={3} maxLength={400} value={question} onChange={e=>onQuestion(e.target.value)} placeholder="Ví dụ: Cần kiểm tra những gì trước khi phê duyệt?"/></label>
-        <div className="ai-question-row">{presetQuestions.map(value=><button type="button" key={value} className="ai-prompt" onClick={()=>onQuestion(value)}>{value}</button>)}</div>
-        <button className="primary" type="button" disabled={busy} onClick={onAnalyze}><Sparkles size={16}/>{busy?'Đang phân tích…':visitor?'Xem giải thích mô phỏng':'Phân tích kịch bản bằng AI'}</button>
+        <div className="ai-conversation" aria-live="polite" aria-label="Hội thoại phân tích AI">
+          {!messages.length&&<div className="ai-conversation-empty"><BrainCircuit size={23}/><p>Hãy đặt câu hỏi đầu tiên. Ví dụ: “Nếu lượt khám tăng thêm 20%, phương án 9 bác sĩ có còn phù hợp?”</p></div>}
+          {messages.map(m=><article className={'ai-chat-bubble '+(m.role==='user'?'from-user':'from-assistant')} key={m.id}>
+            <div className="ai-chat-name">{m.role==='user'?'Bạn':m.response?.source==='OPENAI'?'OpenAI Operations Advisor':'DSS Advisor · giải thích dự phòng'}</div>
+            <div className="ai-chat-text">{m.text.split('\n').filter(Boolean).map((line,i)=><p key={i}>{line}</p>)}</div>
+            {m.response&&<div className="ai-chat-metadata">
+              <span className={'dss-tag '+(m.response.source==='OPENAI'?'good':'neutral')}>{m.response.source==='OPENAI'?'OpenAI đã phản hồi':'Không dùng OpenAI'}</span>
+              {m.response.cached&&<span className="ai-cached"><Clock3 size={12}/> Từ bộ nhớ đệm</span>}
+              {m.response.source!=='OPENAI'&&<small>{reasonText[m.response.reason]??m.response.reason}</small>}
+            </div>}
+            {m.response?.evidence.comparison&&<Preview data={m.response.evidence.comparison}/>}
+            {Boolean(m.response?.warnings.length)&&<div className="ai-chat-warnings"><AlertTriangle size={14}/><span>{m.response?.warnings.join(' ')}</span></div>}
+            {Boolean(m.response?.nextActions.length)&&<div className="ai-next-actions"><Lightbulb size={14}/><span>{m.response?.nextActions.join(' · ')}</span></div>}
+          </article>)}
+        </div>
+        <label className="field">Câu hỏi tiếp theo<textarea value={question} rows={3} maxLength={600} onChange={e=>onQuestion(e.target.value)} placeholder="Hỏi về rủi ro, chi phí hoặc thử thay đổi nhu cầu..."/></label>
+        <div className="ai-question-row">{presetQuestions.map(q=><button key={q} type="button" className="ai-prompt" onClick={()=>onQuestion(q)}>{q}</button>)}</div>
+        <div className="ai-input-actions"><button type="button" className="primary" disabled={busy||question.trim().length<4} onClick={onAnalyze}>
+          {busy?<Clock3 size={15}/>:<Send size={15}/>} {busy?'Đang phân tích…':visitor?'Xem giải thích không dùng AI':'Gửi câu hỏi đến AI'}</button>
+          {messages.length>0&&<button type="button" className="secondary" disabled={busy} onClick={onClear}>Xóa hội thoại hiện tại</button>}
+        </div>
+        <p className="tiny muted ai-safety"><ShieldCheck size={14}/> Dữ liệu giả lập. Mọi kịch bản What-if trong hội thoại chỉ là bản xem thử; không cập nhật hồ sơ đã lưu và không tự phê duyệt.</p>
       </>}
-      {insight&&selected&&<div className="ai-result">
-        <div className="ai-result-label"><span className={'dss-tag '+(authentic?'good':'neutral')}>{authentic?<><CheckCircle2 size={14}/> OpenAI đã phản hồi</>:'Giải thích dự phòng – không phải AI'}</span>
-        {insight.reason&&<small>{reasonText[insight.reason]??insight.reason}</small>}</div>
-        <div className="ai-output">{insight.text.split('\n').filter(Boolean).map((line,index)=><p key={index}>{line}</p>)}</div>
-        {insight.evidence&&<div className="ai-evidence"><strong>Đối chiếu dữ liệu đã xác thực bởi DSS</strong>
-          <span>Nhu cầu: {insight.evidence.demand} lượt · Nhân sự đề xuất: {insight.evidence.recommended?.doctors??'—'} bác sĩ</span>
-          {insight.evidence.warnings.map((warning,i)=><small key={i}>{warning}</small>)}
-        </div>}
-        <p className="tiny muted"><ShieldCheck size={14}/> AI chỉ tham vấn. Manager chịu trách nhiệm quyết định; không sử dụng cho chẩn đoán hoặc điều trị.</p>
-      </div>}
     </section>
   </div>;
 }

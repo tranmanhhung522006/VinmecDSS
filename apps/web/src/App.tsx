@@ -3,6 +3,7 @@ import StaffLogin from './components/StaffLogin';
 import WorkflowGuide from './components/WorkflowGuide';
 import OperationsDashboard from './components/OperationsDashboard';
 import AiWorkspace from './components/AiWorkspace';
+import type {AiMessage,AiAnswer} from './lib/ai.types';
 import {ApiError,request,loadSession,saveSession,clearSession,type StaffUser} from './lib/api';
 import {Activity,BarChart3,ClipboardCheck,FileText,GitBranch,LogOut,ShieldCheck,Sparkles,ArrowRight,Loader2,CheckCircle2,AlertCircle,CalendarClock,Search,Download,Filter,Stethoscope,UserRound,ChevronRight,BrainCircuit} from 'lucide-react';
 import {ForecastQualityCard,ScenarioCapacityChart,type ForecastQuality} from './components/OperationsAnalytics';
@@ -27,13 +28,14 @@ export default function App(){
   const [error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false),[reportOpen,setReportOpen]=useState(false);
   const [forecastQuality,setForecastQuality]=useState<ForecastQuality|null>(null);
   const [aiStatus,setAiStatus]=useState<{configured:boolean;remaining:number;dailyLimit:number}|null>(null);
+  const [aiMessages,setAiMessages]=useState<AiMessage[]>([]);
   const [historySearch,setHistorySearch]=useState(''),[historyStatus,setHistoryStatus]=useState('ALL');
   const filteredScenarios=scenarios.filter(s=>(historyStatus==='ALL'||(s.decision?.action||'PENDING')===historyStatus)
     && (s.title+' '+s.targetDay+' '+(s.author?.name||'')).toLocaleLowerCase().includes(historySearch.trim().toLocaleLowerCase()));
   const [title,setTitle]=useState('Mô phỏng nhu cầu khám tăng'),[targetDay,setTargetDay]=useState(()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)}),[baseline,setBaseline]=useState(200),[growth,setGrowth]=useState(30),[rationale,setRationale]=useState('Reviewed the capacity constraints and incremental staffing cost.'),[selectedDoctors,setSelectedDoctors]=useState<number>(9),[question,setQuestion]=useState('Phương án này có những rủi ro, đánh đổi và bước kiểm tra nào trước khi phê duyệt?');
   const token=session.token;
   const isVisitor=session.user.role==='VIEWER';
-  function resetPrivateState(){setScenarios([]);setSelected(null);setForecast(null);setInsight(null);setAiStatus(null);setError('');setNotice('');setTab('overview');setBusy(false);setSidebarOpen(false);}
+  function resetPrivateState(){setScenarios([]);setSelected(null);setForecast(null);setInsight(null);setAiStatus(null);setAiMessages([]);setError('');setNotice('');setTab('overview');setBusy(false);setSidebarOpen(false);}
   // Direct account switch: one click always displays the login screen.
   function switchAccount(){revision.current++;clearSession();setSession(visitor);resetPrivateState();setSummary(null);setShowLogin(true);}
   function publicPreview(){revision.current++;clearSession();setSession(visitor);resetPrivateState();setSummary(null);setShowLogin(false);}
@@ -69,8 +71,8 @@ export default function App(){
   async function doAction(action:(expected:number)=>Promise<void>){const expected=revision.current;setError('');setNotice('');setBusy(true);try{await action(expected)}catch(e){if(expected!==revision.current)return;if(e instanceof ApiError&&e.status===401){switchAccount()}else setError(e instanceof Error?e.message:'Thao tác thất bại.')}finally{if(expected===revision.current)setBusy(false)}}
   function navigate(t:Tab){if(t==='history'&&isVisitor)return;setTab(t);setSidebarOpen(false);}
   async function runForecast(){await doAction(async expected=>{const f=await request<Forecast>(isVisitor?'/public/forecast':'/forecasts/run','POST',{targetDay},token);if(expected!==revision.current)return;setForecast(f);setBaseline(f.predictedVisits);setNotice('Forecast calculated from synthetic historical aggregates. You can edit baseline before running What-if.');});}
-  async function runScenario(e:FormEvent){e.preventDefault();await doAction(async expected=>{const s=await request<Scenario>(isVisitor?'/public/evaluate':'/scenarios','POST',{title,targetDay,baselineDemand:baseline,growthPercent:growth},token);if(expected!==revision.current)return;setSelected(s);setInsight(null);setReportOpen(false);setSelectedDoctors(s.recommendation.recommended?.doctors??s.alternatives.find(a=>a.eligible)?.doctors??0);setNotice(isVisitor?'Scenario calculated by the backend in public preview mode. No database record was created.':'Scenario calculated and saved in PostgreSQL.');if(!isVisitor)await refresh(token,expected);});}
-  async function selectScenario(s:Scenario){await doAction(async expected=>{const result=await request<Scenario>('/scenarios/'+s.id,'GET',undefined,token);if(expected!==revision.current)return;setSelected(result);setSelectedDoctors(result.recommendation.recommended?.doctors??result.alternatives.find(a=>a.eligible)?.doctors??0);setInsight(null);setTab('scenario')});}
+  async function runScenario(e:FormEvent){e.preventDefault();await doAction(async expected=>{const s=await request<Scenario>(isVisitor?'/public/evaluate':'/scenarios','POST',{title,targetDay,baselineDemand:baseline,growthPercent:growth},token);if(expected!==revision.current)return;setSelected(s);setInsight(null);setAiMessages([]);setReportOpen(false);setSelectedDoctors(s.recommendation.recommended?.doctors??s.alternatives.find(a=>a.eligible)?.doctors??0);setNotice(isVisitor?'Scenario calculated by the backend in public preview mode. No database record was created.':'Scenario calculated and saved in PostgreSQL.');if(!isVisitor)await refresh(token,expected);});}
+  async function selectScenario(s:Scenario){await doAction(async expected=>{const result=await request<Scenario>('/scenarios/'+s.id,'GET',undefined,token);if(expected!==revision.current)return;setSelected(result);setSelectedDoctors(result.recommendation.recommended?.doctors??result.alternatives.find(a=>a.eligible)?.doctors??0);setInsight(null);setAiMessages([]);setTab('scenario')});}
   async function selectScenarioForAi(id:string){
     const found=scenarios.find(s=>s.id===id);
     if(!found)return;
@@ -79,8 +81,36 @@ export default function App(){
       if(expected!==revision.current)return;
       setSelected(result);
       setSelectedDoctors(result.recommendation.recommended?.doctors??result.alternatives.find(a=>a.eligible)?.doctors??0);
-      setInsight(null);
+      setInsight(null);setAiMessages([]);
       setTab('ai');
+    });
+  }
+  async function converseWithAi(){
+    if(!selected||question.trim().length<4)return;
+    const prompt=question.trim();
+    const history=aiMessages.slice(-6).map(m=>({role:m.role,text:m.text.slice(0,500)}));
+    await doAction(async expected=>{
+      let result:AiAnswer;
+      if(isVisitor){
+        const r=selected.recommendation.recommended;
+        result={source:'RULE_BASED_FALLBACK',reason:'PUBLIC_PREVIEW',
+          answer:r?'Theo dữ liệu giả lập, phương án '+r.doctors+' bác sĩ có công suất '+r.capacity+' lượt cho nhu cầu '+selected.demand+' lượt. Thiếu '+r.gap+' lượt và chi phí bổ sung '+money(r.addedCostVnd)+'. Đăng nhập nhân sự để hỏi OpenAI với phân tích What-if tự nhiên và hội thoại nhiều lượt.':'Hiện không có phương án đáp ứng ràng buộc. Hãy điều chỉnh nguồn lực để phân tích tiếp.',
+          warnings:['Đây là diễn giải theo quy tắc, không phải OpenAI.'],nextActions:['Đăng nhập nhân sự và lưu kịch bản để sử dụng AI thực tế.'],
+          intent:{kind:'explain',demandChangePercent:null,absoluteDemand:null,doctorDelta:null,roomDelta:null,topic:''},intentSource:'LOCAL',
+          evidence:{currentDemand:selected.demand,originalRecommendation:selected.recommendation.recommended,currentAssumptions:selected.assumptions,comparison:null,note:'Public preview'},disclaimer:'Synthetic demo',cached:false};
+      }else{
+        result=await request<AiAnswer>('/ai/converse/'+encodeURIComponent(selected.id),'POST',{question:prompt,history},token);
+      }
+      if(expected!==revision.current)return;
+      const id=Date.now()+aiMessages.length*2;
+      setAiMessages(previous=>[...previous.slice(-12),
+        {id,role:'user',text:prompt},
+        {id:id+1,role:'assistant',text:result.answer,response:result}]);
+      setQuestion('');
+      if(!isVisitor){
+        const status=await request<{configured:boolean;remaining:number;dailyLimit:number}>('/ai/status','GET',undefined,token).catch(()=>null);
+        if(expected===revision.current&&status)setAiStatus(status);
+      }
     });
   }
   async function generateInsight(){
@@ -144,10 +174,11 @@ export default function App(){
     onRefresh={()=>void doAction(async expected=>{await refresh(token,expected);if(expected===revision.current)setNotice('Đã cập nhật dữ liệu từ backend.');})}
     onSelect={item=>{const full=scenarios.find(s=>s.id===item.id);if(full)void selectScenario(full)}}/>}
   {tab==='ai'&&<AiWorkspace
-    scenarios={scenarios} selected={selected} insight={insight} status={aiStatus}
+    scenarios={scenarios} selected={selected} messages={aiMessages} status={aiStatus}
     visitor={isVisitor} busy={busy} question={question} onQuestion={setQuestion}
     onChoose={id=>void selectScenarioForAi(id)}
-    onAnalyze={()=>void generateInsight()}
+    onAnalyze={()=>void converseWithAi()}
+    onClear={()=>setAiMessages([])}
     onScenario={()=>navigate('scenario')} onLogin={switchAccount}/>}
   {tab==='scenario'&&<div className="two-col"><div className="left-stack"><form className="card panel" onSubmit={runScenario}><div className="panel-head"><div><h2>Thiết lập mô phỏng</h2><p className="muted">Chọn ngày, dự báo nhu cầu và so sánh bác sĩ, phòng khám, chi phí.</p></div><CalendarClock size={19} className="muted"/></div><div className="field-grid"><label className="field fullfield">Tên kịch bản<input value={title} maxLength={100} onChange={e=>setTitle(e.target.value)} required/></label><label className="field">Ngày cần dự báo<input type="date" value={targetDay} onChange={e=>setTargetDay(e.target.value)} required/></label><label className="field">Lượt khám cơ sở<input type="number" min={0} max={100000} value={baseline} onChange={e=>setBaseline(Number(e.target.value))}/></label><label className="field fullfield">Thay đổi nhu cầu <span className="range-value">{growth>0?'+':''}{growth}%</span><input type="range" min={-50} max={100} step={5} value={growth} onChange={e=>setGrowth(Number(e.target.value))}/><div className="range-hints"><span>-50%</span><span>+100%</span></div></label></div><div className="estimate"><span>Nhu cầu sau điều chỉnh</span><strong>{Math.round(baseline*(1+growth/100))} visits</strong></div><div className="button-row"><button type="button" className="secondary" disabled={busy} onClick={runForecast}>1. Dự báo từ lịch sử</button><button type="submit" className="primary" disabled={busy||session.user.role==='ADMIN'}>{busy?<Loader2 size={16} className="spin"/>:null} {isVisitor?'2. Tính thử (không lưu)':'2. Tính toán & lưu'} <ArrowRight size={16}/></button></div>{forecast&&<div className="forecast-result"><strong>Forecast: {forecast.predictedVisits} visits</strong><small>{forecast.model} · {forecast.trainingDays} historical days · {forecast.explanation}</small></div>}</form><article className="card panel assumptions"><h2>Nhân sự & phòng khám</h2><p className="muted">Các giới hạn này lấy từ dữ liệu backend, AI không thể thay đổi.</p><div className="definition"><span>Doctors on current roster</span><strong>{summary?.department.activeDoctors||'—'}</strong></div><div className="definition"><span>Maximum available doctors</span><strong>{summary?.department.availableDoctors||'—'}</strong></div><div className="definition"><span>Available clinic rooms</span><strong>{summary?.department.rooms||'—'}</strong></div><div className="definition"><span>Visits per doctor per day</span><strong>{summary?.department.visitsPerDoctor||'—'}</strong></div><div className="definition"><span>Cost per extra doctor</span><strong>{summary?money(summary.department.extraDoctorCost):'—'}</strong></div></article></div>
   <div className="right-stack">{selected?<><article className="card panel analysis"><div className="panel-head"><div><div className="micro">SCENARIO RESULT</div><h2>{selected.title}</h2><p className="muted">Demand {selected.demand} visits · {selected.targetDay.slice(0,10)}</p></div><Pill kind={selected.decision?.action==='APPROVED'?'good':selected.decision?.action==='REJECTED'?'bad':'neutral'}>{selected.decision?.action||'PENDING'}</Pill></div><div className="table-wrap"><table><thead><tr><th>Doctors</th><th>Capacity</th><th>Gap</th><th>Added cost</th><th>Status</th></tr></thead><tbody>{selected.alternatives.map(a=><tr key={a.doctors} className={a.doctors===selected.recommendation.recommended?.doctors?'highlight-row':''}><td><strong>{a.doctors}</strong>{a.doctors===selected.recommendation.recommended?.doctors&&<span className="subcell">Recommended</span>}</td><td>{a.capacity}</td><td className={a.gap?'red':'green'}>{a.gap}</td><td>{money(a.addedCostVnd)}</td><td><Pill kind={!a.eligible?'bad':a.servesDemand?'good':'neutral'}>{!a.eligible?'Ineligible':a.servesDemand?'Covers demand':'Shortfall'}</Pill></td></tr>)}</tbody></table></div><ScenarioCapacityChart alternatives={selected.alternatives} demand={selected.demand} recommendedDoctors={selected.recommendation.recommended?.doctors??null}/><div className="recommendation"><ShieldCheck size={19}/><div><strong>{selected.recommendation.recommended?`Recommend ${selected.recommendation.recommended.doctors} doctors`:'No eligible alternative'}</strong><p>{selected.recommendation.recommended?.reason||'Adjust availability and room assumptions.'}</p></div></div><details className="method"><summary>How the recommendation is calculated</summary><p>{selected.recommendation.criteria}</p></details><div className="button-row"><button className="secondary" type="button" disabled={busy} onClick={downloadReport}><FileText size={15}/> Export JSON report</button></div>{reportOpen&&<small className="muted">Report exported from server-side persisted results.</small>}</article>
