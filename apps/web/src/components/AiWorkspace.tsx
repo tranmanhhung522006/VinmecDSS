@@ -1,4 +1,4 @@
-import {BrainCircuit,CheckCircle2,ShieldCheck,Sparkles,ArrowRight,AlertTriangle,UserRound,Lightbulb,FileSearch,MessageSquareText,Calculator,Send,Clock3} from 'lucide-react';
+import {BrainCircuit,ShieldCheck,Sparkles,ArrowRight,AlertTriangle,UserRound,Lightbulb,FileSearch,MessageSquareText,Calculator,Send,Clock3} from 'lucide-react';
 import type {AiMessage,AiPreview} from '../lib/ai.types';
 
 type Candidate={id:string;title:string;targetDay:string;demand:number;recommendation:{recommended:{doctors:number;capacity:number;gap:number;addedCostVnd:number}|null}};
