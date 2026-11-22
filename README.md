@@ -18,27 +18,35 @@ Protected staff roles can save scenarios and decisions. Only a **MANAGER** can f
 ## Project structure
 
 ```text
-apps/api/src/           Modular NestJS composition root, controllers, security, DTOs and model engines
-apps/api/prisma/        Prisma schema and idempotent synthetic seed
-apps/api/test/          Deterministic algorithm tests
-apps/web/src/           React dashboard, scenario workflow, AI and capacity planning lab
-.github/workflows/      CI typecheck, tests, builds
-render.yaml             Render Blueprint (single web service)
-docs/DEPLOY_RENDER_NEON.md   Cloud deployment steps
-ARCHITECTURE.md         Scope, assumptions, governance
-TEST_PLAN.md            Acceptance tests
-docs/OUTLINE_MAPPING.md Links the prototype to INS3070 deliverables
-  docs/DSS_ARCHITECTURE.md  Architecture, ownership and boundaries
-  docs/CAPACITY_LAB.md     Constraint enumeration and sensitivity model
+VinmecDSS/
+├── frontend/                  React + Vite: UI, analytics, AI workspace
+│   ├── src/
+│   ├── package.json
+│   └── vite.config.ts
+├── backend/                   NestJS: API, auth, DSS engines and tests
+│   ├── src/
+│   ├── test/
+│   ├── .env.example
+│   └── package.json
+├── database/                  Prisma schema and synthetic database seed
+│   └── prisma/
+│       ├── schema.prisma
+│       └── seed.ts
+├── docs/
+├── docker-compose.yml
+├── render.yaml
+└── package.json
 ```
+
+The three directories separate responsibilities at source-code level. Render still hosts one Node Web Service (API plus built frontend) while PostgreSQL runs on Neon; this does not create three independent production services.
 
 ## Local development
 
 Requirements: Node.js 22+, npm, Docker Desktop.
 
 ```powershell
-Copy-Item apps/api/.env.example apps/api/.env
-# Edit apps/api/.env; replace JWT_SECRET with a random 32+ character secret
+Copy-Item backend/.env.example backend/.env
+# Edit backend/.env; replace JWT_SECRET with a random 32+ character secret
 docker compose up -d
 npm install
 npm run db:generate

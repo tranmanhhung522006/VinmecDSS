@@ -8,7 +8,7 @@ This is an **academic, synthetic-data-only** outpatient operations prototype, no
 2. Check `/api/auth/status`: `staffLoginAvailable: true` confirms that *some* active account exists; it does **not** verify the password or that every demo role is seeded.
 3. Demo emails: `manager@demo.local`, `coordinator@demo.local`, `analyst@demo.local`, `admin@demo.local`.
 4. Role selection only fills the email field. The password is **not** shown by the UI or derived from the role.
-5. Set `DEMO_PASSWORD` privately in Render (at least 16 characters). The seed script upserts demo users with the configured password at deployment startup. For local development, set it in `apps/api/.env`, then run `npm run db:seed`. **Do not put passwords in the repo or screenshots.**
+5. Set `DEMO_PASSWORD` privately in Render (at least 16 characters). The seed script upserts demo users with the configured password at deployment startup. For local development, set it in `backend/.env`, then run `npm run db:seed`. **Do not put passwords in the repo or screenshots.**
 6. If you changed `DEMO_PASSWORD` on Render, redeploy/restart so the startup seed updates password hashes. Old credentials will no longer work.
 7. The login API now counts failed sign-ins rather than every sign-in. Ten consecutive failures for the same IP and email are blocked for 15 minutes in this single-process demo.
 8. After login, the UI checks the token against `/api/me`. Expired/invalid sessions return to public preview with a clear message. Bearer tokens remain in sessionStorage and disappear when the tab session ends.

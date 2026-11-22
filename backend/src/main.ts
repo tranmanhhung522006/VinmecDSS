@@ -14,7 +14,7 @@ async function bootstrap(){
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({whitelist:true,forbidNonWhitelisted:true,transform:true}));
   if (process.env.CLIENT_ORIGIN) app.enableCors({origin:process.env.CLIENT_ORIGIN});
-  const webDir=join(__dirname,'../../web/dist');
+  const webDir=join(__dirname,'../../frontend/dist');
   if (existsSync(join(webDir,'index.html'))) {
     app.useStaticAssets(webDir,{index:false});
     app.use((req:express.Request,res:express.Response,next:express.NextFunction)=>{
