@@ -52,13 +52,13 @@ export class StudyController {
           extraDoctorCost:input.extraDoctorCost??d.extraDoctorCost,
           targetUtilizationPercent:input.targetUtilizationPercent
         });
-        output={...result,robustness:analyzeDecisionRobustness(result.inputs,result.recommended.doctors)};
+        output={...result,robustness:analyzeDecisionRobustness(result.inputs,result.recommended.doctors),persisted:true};
       }catch(e){throw new BadRequestException(e instanceof Error?e.message:'Invalid capacity assumptions');}
       modelId='optimization.capacity-enumeration';
       snapshot=input;
     }else if(body.kind==='SHIFT'){
       const input=validated(ShiftAllocationDto,body.input);
-      try{output=optimizeShiftAllocation(input);}
+      try{output={...optimizeShiftAllocation(input),persisted:true};}
       catch(e){throw new BadRequestException(e instanceof Error?e.message:'Invalid shift assumptions');}
       modelId='optimization.shift-slot-enumeration';
       snapshot=input;
