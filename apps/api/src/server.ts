@@ -5,6 +5,7 @@ import {compare,} from 'bcryptjs';
 import {IsString, IsOptional, IsNumber, Min, Max, MaxLength, IsInt, IsIn} from 'class-validator';
 import OpenAI from 'openai';
 import {compareAlternatives,computeDemand,forecastByWeekday} from './dss.engine';
+import {LoginFailureLimiter,normalizeLoginEmail} from './auth.logic';
 import {rollingForecastBacktest} from './forecast.metrics';
 
 @Injectable()
@@ -45,17 +46,24 @@ class JwtGuard implements CanActivate {
 @Controller('auth')
 class AuthController {
   constructor(private db:Database,private jwt:JwtService){}
-  private attempts=new Map<string,{count:number,reset:number}>();
+  private readonly attempts=new LoginFailureLimiter(10,15*60*1000);
+  @Get('status') async status(){
+    // Configuration-only diagnostics. Do not disclose user names, emails or passwords.
+    const staffAccounts=await this.db.user.count({where:{active:true}});
+    return {staffLoginAvailable:staffAccounts>0,publicPreviewAvailable:true};
+  }
   @Post('login') async login(@Body() input:LoginDto,@Req() req:any){
     const ip=String(req.ip||req.socket?.remoteAddress||'unknown');
-    const now=Date.now(),recent=this.attempts.get(ip);
-    const rate=recent&&recent.reset>now?recent:{count:0,reset:now+15*60*1000};
-    if(rate.count>=15)throw new ForbiddenException('Too many sign-in attempts, try again later');
-    rate.count++;this.attempts.set(ip,rate);
-    if(this.attempts.size>2000)for(const [k,v] of this.attempts)if(v.reset<now)this.attempts.delete(k);
-    const user=await this.db.user.findUnique({where:{email:input.email.toLowerCase().trim()}});
-    if(!user||!user.active||!await compare(input.password,user.passwordHash))throw new UnauthorizedException('Incorrect email or password');
-    return {accessToken:await this.jwt.signAsync({sub:user.id}, {expiresIn:'8h'}),user:{name:user.name,email:user.email,role:user.role}};
+    const email=normalizeLoginEmail(input.email);
+    const rateKey=ip+':'+email;
+    if(this.attempts.isBlocked(rateKey))throw new ForbiddenException('Too many failed sign-in attempts. Try again after 15 minutes.');
+    const user=await this.db.user.findUnique({where:{email}});
+    if(!user||!user.active||!await compare(input.password,user.passwordHash)){
+      this.attempts.recordFailure(rateKey);
+      throw new UnauthorizedException('Incorrect email or password');
+    }
+    this.attempts.recordSuccess(rateKey);
+    return {accessToken:await this.jwt.signAsync({sub:user.id},{expiresIn:'8h'}),user:{name:user.name,email:user.email,role:user.role}};
   }
 }
 // Public visitors can explore genuine server-side calculations without logging in.
@@ -115,7 +123,12 @@ class DssController {
   private async department(){const d=await this.db.department.findFirst();if(!d)throw new ServiceUnavailableException('Run database seed first');return d;}
   private async getScenario(id:string){const s=await this.db.scenario.findUnique({where:{id},include:{decision:{include:{actor:{select:{name:true,role:true}}}},insights:true,author:{select:{name:true}}}});if(!s)throw new NotFoundException('Scenario not found');return s;}
 
-  @Get('me') async me(@Req() req:any){return userFrom(req);}
+  @Get('me') async me(@Req() req:any){
+    const id=userFrom(req).id;
+    const user=await this.db.user.findUnique({where:{id},select:{name:true,email:true,role:true,active:true}});
+    if(!user?.active)throw new UnauthorizedException('Session no longer valid');
+    return {name:user.name,email:user.email,role:user.role};
+  }
   @Get('dashboard/summary') async summary(){
     const d=await this.department();
     const visits=await this.db.visitAggregate.findMany({where:{departmentId:d.id},orderBy:{day:'asc'}});
