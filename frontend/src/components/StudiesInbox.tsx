@@ -37,7 +37,7 @@ export default function StudiesInbox({token,role}:{token:string;role:string}){
   }
   return <div className="study-workspace">
     <section className="card panel">
-      <div className="panel-head"><div><div className="micro">GOVERNED DSS WORKFLOW</div><h2>Hồ sơ phân tích & phê duyệt</h2><p className="muted">Các mô hình lưu đầu vào và kết quả được tính tại backend. Chỉ Manager phê duyệt hoặc từ chối; mỗi hồ sơ được quyết định một lần.</p></div>
+      <div className="panel-head"><div><div className="micro">HỒ SƠ QUYẾT ĐỊNH</div><h2>Hồ sơ phân tích & phê duyệt</h2><p className="muted">Xem hồ sơ đã lưu. Chỉ Manager được duyệt hoặc từ chối, mỗi hồ sơ một lần.</p></div>
         <button type="button" className="secondary" onClick={()=>void refresh()} disabled={loading}><RefreshCw size={15}/> Làm mới</button></div>
       {error&&<p role="alert" className="lab-error">{error}</p>}
       {notice&&<p className="study-notice" role="status">{notice}</p>}
