@@ -38,7 +38,11 @@ export function compareAlternatives(demand: number, assumptions: Assumptions): {
   const ranked = alternatives.filter(a=>a.eligible).sort((a,b)=>Number(b.servesDemand)-Number(a.servesDemand) || b.score-a.score || a.addedCostVnd-b.addedCostVnd);
   return {alternatives,recommended:ranked[0] ?? null,criteria:'Hard constraints: doctor availability and clinic rooms. Prefer demand-covered alternatives, then score = 100 − 350 × gap/demand − 10 × extra doctors − 10 × surplus/demand.'};
 }
-export function forecastByWeekday(targetDay: Date, visits: Array<{day:Date,visits:number}>): {predictedVisits:number;trainingDays:number;model:string;explanation:string} {
+type DailyVisits = {day:Date;visits:number};
+type ForecastResult = {predictedVisits:number;trainingDays:number;model:string;explanation:string};
+
+/** Return the exact daily aggregates selected by the forecasting algorithm, not a second query. */
+export function forecastByWeekdayWithEvidence(targetDay: Date, visits: DailyVisits[]): ForecastResult & {sample:Array<{day:string;visits:number}>} {
   const history=visits.filter(v=>v.day.getTime() < targetDay.getTime()).sort((a,b)=>b.day.getTime()-a.day.getTime());
   if(history.length===0) throw new Error('No historical data');
   const weekday=history.filter(v=>v.day.getUTCDay()===targetDay.getUTCDay()).slice(0,4);
@@ -46,7 +50,14 @@ export function forecastByWeekday(targetDay: Date, visits: Array<{day:Date,visit
   return {
     predictedVisits:Math.round(sample.reduce((s,v)=>s+v.visits,0)/sample.length),
     trainingDays: sample.length,
+    sample: sample.map(v=>({day:v.day.toISOString().slice(0,10),visits:v.visits})),
     model: weekday.length>=2 ? 'WEEKDAY_MEAN_4' : 'MOVING_AVERAGE_7',
     explanation:weekday.length>=2 ? 'Average of up to four previous matching weekdays' : 'Mean of up to seven most recent recorded days'
   };
+}
+
+/** Keep the legacy result contract for existing forecast runs and backtests. */
+export function forecastByWeekday(targetDay:Date, visits:DailyVisits[]):ForecastResult {
+  const {predictedVisits,trainingDays,model,explanation}=forecastByWeekdayWithEvidence(targetDay,visits);
+  return {predictedVisits,trainingDays,model,explanation};
 }
