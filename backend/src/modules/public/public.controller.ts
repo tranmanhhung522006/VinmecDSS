@@ -2,7 +2,7 @@ import {Controller,Get,Post,Body,BadRequestException,ServiceUnavailableException
 import {Database} from '../../infrastructure/database';
 import {ForecastDto,ScenarioDto,CapacityLabDto,ShiftAllocationDto} from '../../contracts/dto';
 import {parseDate} from '../../shared/request-context';
-import {compareAlternatives,computeDemand,forecastByWeekday} from '../../dss.engine';
+import {compareAlternatives,computeDemand,forecastByWeekdayWithEvidence} from '../../dss.engine';
 import {optimizeCapacity} from '../../planning.engine';
 import {optimizeShiftAllocation} from '../../shift.engine';
 import {analyzeDecisionRobustness} from '../../robustness.engine';
@@ -44,7 +44,7 @@ export class PublicController {
     const records=await this.db.visitAggregate.findMany({where:{departmentId:d.id,day:{lt:targetDay}}});
     const aggregate=new Map<string,{day:Date,visits:number}>();
     for(const v of records){const key=v.day.toISOString().slice(0,10);const old=aggregate.get(key);aggregate.set(key,{day:v.day,visits:(old?.visits??0)+v.visits});}
-    try {return {...forecastByWeekday(targetDay,Array.from(aggregate.values())),targetDay:input.targetDay,synthetic:true};}
+    try {return {...forecastByWeekdayWithEvidence(targetDay,Array.from(aggregate.values())),targetDay:input.targetDay,synthetic:true};}
     catch {throw new BadRequestException('No historical data before selected date');}
   }
   @Post('forecast-comparison') async forecastComparison(@Body() input:ForecastDto){
