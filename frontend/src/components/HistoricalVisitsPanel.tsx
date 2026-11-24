@@ -65,7 +65,7 @@ export default function HistoricalVisitsPanel({token,role,onChanged}:Props){
     <div className="panel-head"><div>
       <div className="micro">HISTORICAL DATA MANAGEMENT</div>
       <h2>Dữ liệu lượt khám lịch sử</h2>
-      <p className="muted">Đây là nguồn dữ liệu mà các mô hình dự báo đang đọc từ PostgreSQL. Khác với “Lượt khám cơ sở” bên trên: nhập giả định kịch bản không ghi vào lịch sử.</p>
+      <p className="muted">Nguồn dữ liệu dự báo từ PostgreSQL. Nhập giả định kịch bản không làm thay đổi lịch sử.</p>
     </div><Database size={21} className="muted"/></div>
     <div className="visit-history-meta">
       <span><CalendarDays size={15}/>{data?fmt(data.totalDays)+' ngày đã lưu':loading?'Đang tải dữ liệu…':'—'}</span>
@@ -108,6 +108,6 @@ export default function HistoricalVisitsPanel({token,role,onChanged}:Props){
         <tbody>{changes.slice(0,25).map(change=><tr key={change.id}><td>{change.day.slice(0,10)}</td><td>{change.beforeMorning??'—'} / {change.beforeAfternoon??'—'}</td>
           <td>{change.afterMorning} / {change.afterAfternoon}</td><td>{change.actor.name}</td><td>{change.reason||'—'}</td></tr>)}</tbody></table></div>
     </details>}
-    <p className="lab-caption">Thêm dữ liệu của ngày D sẽ ảnh hưởng dự báo những ngày sau D và có thể làm thay đổi kết quả so sánh 3 mô hình. Những kịch bản đã lưu trước đó không tự tính lại.</p>
+    <p className="lab-caption">Cập nhật lịch sử có thể thay đổi dự báo sau đó; kịch bản đã lưu không tự tính lại.</p>
   </section>;
 }
