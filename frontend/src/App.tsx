@@ -20,7 +20,22 @@ type User={name:string;email:string;role:Role};
 type Alt={doctors:number;capacity:number;gap:number;surplus:number;utilizationPercent:number;addedCostVnd:number;eligible:boolean;servesDemand:boolean;score:number;reason:string};
 type Scenario={id:string;title:string;targetDay:string;baselineDemand:number;growthPercent:number;demand:number;assumptions:{currentDoctors:number;availableDoctors:number;rooms:number;visitsPerDoctor:number;extraDoctorCost:number};alternatives:Alt[];recommendation:{recommended:Alt|null;criteria:string};decision?:{action:'APPROVED'|'REJECTED';alternativeDoctors:number|null;rationale:string;actor?:{name:string};createdAt:string}|null;createdAt:string;author?:{name:string};insights?:{text:string;source:string}[]};
 type Summary={department:{name:string;activeDoctors:number;availableDoctors:number;rooms:number;visitsPerDoctor:number;extraDoctorCost:number};latestRecordedVisits:number;capacity:number;utilizationPercent:number;daily:{day:string;visits:number}[];disclaimer:string};
-type Forecast={predictedVisits:number;model:string;trainingDays:number;explanation:string;targetDay:string};
+type Forecast={predictedVisits:number;model:string;trainingDays:number;explanation:string;targetDay:string;sample?:{day:string;visits:number}[]};
+const historyDate=(day:string)=>day.slice(0,10).split('-').reverse().join('/');
+const historyWeekday=(day:string)=>new Intl.DateTimeFormat('vi-VN',{weekday:'long',timeZone:'UTC'}).format(new Date(day+'T00:00:00Z'));
+function ForecastEvidence({forecast}:{forecast:Forecast}){
+  const sample=forecast.sample;
+  const total=sample?.reduce((sum,row)=>sum+row.visits,0)??0;
+  const sameWeekday=forecast.model==='WEEKDAY_MEAN_4';
+  return <details className="method" key={forecast.targetDay}>
+    <summary>Xem dữ liệu lịch sử dùng để dự báo</summary>
+    <p>{sameWeekday?'Lấy tối đa 4 ngày cùng thứ gần nhất, có ít nhất 2 ngày phù hợp.':'Không đủ 2 ngày cùng thứ; lấy tối đa 7 ngày có dữ liệu gần nhất.'} Chỉ sử dụng các ngày trước {historyDate(forecast.targetDay)}.</p>
+    {sample&&sample.length>0?<><div className="table-wrap"><table><thead><tr><th>Ngày</th><th>Thứ</th><th>Lượt khám</th></tr></thead><tbody>{sample.map(row=><tr key={row.day}><td>{historyDate(row.day)}</td><td>{historyWeekday(row.day)}</td><td>{row.visits}</td></tr>)}</tbody></table></div>
+      <p><strong>Tổng: {total} lượt / {sample.length} ngày = {(total/sample.length).toLocaleString('vi-VN',{maximumFractionDigits:2})} lượt/ngày.</strong></p>
+      <p> Làm tròn đến số nguyên: <strong>{forecast.predictedVisits} lượt khám.</strong></p></>:<p>Máy chủ chưa trả về danh sách ngày được dùng. Không thể xác nhận các dòng dữ liệu của lần dự báo này.</p>}
+    <p className="tiny muted">Dữ liệu tổng hợp giả lập từ PostgreSQL. Xem toàn bộ lịch sử và cập nhật (nếu có quyền) ở bảng Dữ liệu lượt khám lịch sử bên dưới.</p>
+  </details>;
+}
 type Tab='overview'|'scenario'|'capacity'|'shifts'|'studies'|'ai'|'history'|'methodology';
 const money=(n:number)=>new Intl.NumberFormat('en-US').format(n)+' ₫';
 function Pill({children,kind='neutral'}:{children:ReactNode,kind?:'neutral'|'good'|'bad'|'info'}){return <span className={'pill '+kind}>{children}</span>}
@@ -267,12 +282,11 @@ export default function App(){
         <label className="field fullfield">Ngày cần lập kế hoạch<input type="date" value={targetDay} onChange={e=>{setForecast(null);setForecastError('');setTargetDay(e.target.value)}} required/></label>
         <div className="fullfield micro">2 · XÁC ĐỊNH NHU CẦU KHÁM</div>
         <label className="field fullfield">Nguồn nhu cầu cơ sở<select value={demandSource} onChange={e=>changeDemandSource(e.target.value as 'history'|'manual')}><option value="history">Tự động dự báo từ lịch sử</option><option value="manual">Nhập nhu cầu thủ công</option></select></label>
-        {demandSource==='history'?<div className="forecast-result fullfield" role="status" aria-live="polite">
-          {forecastReady&&forecast?<><strong>Nhu cầu dự báo: {forecast.predictedVisits} lượt khám</strong><small>{forecast.model} · {forecast.trainingDays} ngày dữ liệu lịch sử</small></>:forecastError?<><strong>{forecastError}</strong><button type="button" className="secondary" onClick={()=>{setForecastError('');setForecastLoading(true);setHistoryVersion(v=>v+1)}}>Thử lại dự báo</button></>:<small>{targetDay?'Đang lấy dự báo từ lịch sử…':'Chọn ngày để lấy dự báo.'}</small>}
+        {demandSource==='history'?<div className="forecast-result fullfield">
+          {forecastReady&&forecast?<><div role="status"><strong>Nhu cầu dự báo: {forecast.predictedVisits} lượt khám</strong><small>{forecast.model==='WEEKDAY_MEAN_4'?'Trung bình các ngày cùng thứ (Weekday Mean)':'Trung bình các ngày gần nhất (Moving Average)'} · {forecast.trainingDays} ngày dữ liệu lịch sử</small></div><ForecastEvidence forecast={forecast}/></>:forecastError?<><strong>{forecastError}</strong><button type="button" className="secondary" onClick={()=>{setForecastError('');setForecastLoading(true);setHistoryVersion(v=>v+1)}}>Thử lại dự báo</button></>:<small>{targetDay?'Đang lấy dự báo từ lịch sử…':'Chọn ngày để lấy dự báo.'}</small>}
         </div>:<label className="field fullfield">Lượt khám cơ sở<input type="number" min={0} max={100000} step={1} required value={baseline} onChange={e=>setBaseline(e.target.value===''?NaN:Number(e.target.value))}/><small className="muted">Giả định do người dùng nhập, không phải kết quả dự báo.</small></label>}
         <div className="fullfield micro">3 · ĐIỀU CHỈNH TÌNH HUỐNG</div>
-        <label className="field fullfield">Giả định nhu cầu tăng / giảm <span className="range-value">{growth>0?'+':''}{growth}%</span><input type="range" min={-50} max={100} step={5} value={growth} onChange={e=>setGrowth(Number(e.target.value))}/><div className="range-hints"><span>-50%</span><span>+100%</span></div></label>
-        <div className="button-row fullfield" aria-label="Mức thay đổi nhanh">{[0,10,20,30].map(g=><button key={g} type="button" className={growth===g?'primary':'secondary'} aria-pressed={growth===g} onClick={()=>setGrowth(g)}>{g===0?'0%':'+'+g+'%'}</button>)}</div>
+        <label className="field fullfield">Giả định nhu cầu tăng / giảm <span className="range-value">{growth>0?'+':''}{growth}%</span><input type="range" min={-50} max={100} step={1} value={growth} onChange={e=>setGrowth(Number(e.target.value))}/><div className="range-hints"><span>-50%</span><span>+100%</span></div></label>
       </div>
       <div className="estimate"><span>Nhu cầu cần đáp ứng</span><strong>{forecastReady&&Number.isFinite(projectedDemand)?projectedDemand+' lượt':'—'}</strong></div>
       {forecastReady&&Number.isFinite(projectedDemand)&&<p className="tiny muted">{effectiveBaseline} lượt cơ sở {growth>=0?'+':'−'} {Math.abs(projectedDemand-effectiveBaseline)} lượt điều chỉnh.</p>}
