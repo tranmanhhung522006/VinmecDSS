@@ -1,4 +1,4 @@
-import {BrainCircuit,ShieldCheck,Sparkles,ArrowRight,AlertTriangle,UserRound,Lightbulb,FileSearch,MessageSquareText,Calculator,Send,Clock3} from 'lucide-react';
+import {BrainCircuit,ShieldCheck,Sparkles,ArrowRight,AlertTriangle,UserRound,Lightbulb,Calculator,Send,Clock3} from 'lucide-react';
 import type {AiMessage,AiPreview} from '../lib/ai.types';
 
 type Candidate={id:string;title:string;targetDay:string;demand:number;recommendation:{recommended:{doctors:number;capacity:number;gap:number;addedCostVnd:number}|null}};
@@ -45,19 +45,15 @@ export default function AiWorkspace({scenarios,selected,messages,status,visitor,
   const chosen=selected?.recommendation.recommended;
   return <div className="ai-workspace">
     <section className="ai-hero card"><div className="ai-hero-icon"><BrainCircuit size={28}/></div>
-      <div className="ai-hero-content"><div className="micro">AI-ASSISTED OPERATIONS · SYNTHETIC DATA</div><h2>AI Operations Advisor</h2>
-        <p>Hỏi bằng tiếng Việt, thử tăng/giảm nhu cầu, so sánh phương án và trao đổi nhiều lượt. <strong>OpenAI hiểu và phân tích; DSS tính số liệu; Manager phê duyệt.</strong></p>
+      <div className="ai-hero-content"><h2>Trợ lý phân tích</h2>
+        <p>Trao đổi về kịch bản, thử thay đổi nhu cầu và xem giải thích. Kết quả tính toán do DSS cung cấp.</p>
         <div className="ai-hero-status"><span className={'dss-tag '+(visitor?'neutral':status?.configured?'good':'warn')}>
-          {visitor?'Đang dùng bản xem thử (không gọi OpenAI)':status?.configured?'Đã cấu hình khóa AI · chưa xác nhận lượt gọi thực tế':'Chưa xác nhận cấu hình API key'}
-        </span>{status?.configured&&<small>Hạn mức công khai: {status.remaining}/{status.dailyLimit} lượt model đã ghi nhận trong ngày</small>}</div>
+          {visitor?'Đang dùng bản xem thử (không gọi OpenAI)':status?.configured?'Đã cấu hình dịch vụ tư vấn':'Chưa cấu hình hoặc chưa xác nhận dịch vụ'}
+        </span>{status?.configured&&<small>Hạn mức: {status.remaining}/{status.dailyLimit} lượt model đã ghi nhận trong ngày</small>}</div>
       </div>
     </section>
-    <div className="ai-feature-grid">
-      <article className="card ai-feature"><MessageSquareText size={19}/><strong>Hỏi đáp theo ngữ cảnh</strong><p>Hỏi tiếp về rủi ro, chi phí hoặc một phương án trong cuộc trao đổi.</p></article>
-      <article className="card ai-feature"><Calculator size={19}/><strong>Natural Language What-if</strong><p>Ví dụ “nếu tăng 20%”, hệ thống tính lại nhu cầu và nguồn lực ngay trên máy chủ.</p></article>
-      <article className="card ai-feature"><FileSearch size={19}/><strong>Decision brief</strong><p>Nhận định và các bước cần kiểm tra trước khi Manager ra quyết định.</p></article>
-    </div>
-    <section className="card panel ai-workstation-panel"><div className="panel-head"><div><div className="micro">PHÂN TÍCH KỊCH BẢN</div><h2>Trao đổi cùng AI theo dữ liệu DSS</h2><p className="muted">Chọn kịch bản → đặt câu hỏi → kiểm tra kết quả DSS và nguồn phản hồi.</p></div><Sparkles size={19}/></div>
+    
+    <section className="card panel ai-workstation-panel"><div className="panel-head"><div><div className="micro">PHÂN TÍCH KỊCH BẢN</div><h2>Trao đổi cùng AI theo dữ liệu DSS</h2><p className="muted">Chọn kịch bản và đặt câu hỏi.</p></div><Sparkles size={19}/></div>
       {scenarios.length>0&&!visitor&&<label className="field">Chọn kịch bản đã lưu
         <select value={selected&&scenarios.some(s=>s.id===selected.id)?selected.id:''} onChange={e=>onChoose(e.target.value)}>
           <option value="" disabled>— Chọn kịch bản —</option>
@@ -67,8 +63,8 @@ export default function AiWorkspace({scenarios,selected,messages,status,visitor,
         <div><small>KỊCH BẢN HIỆN TẠI</small><strong>{selected.title}</strong><span>{selected.targetDay.slice(0,10)}</span></div>
         <div><small>NHU CẦU GỐC</small><strong>{vn(selected.demand)} lượt</strong><span>Do DSS tính toán</span></div>
         <div><small>PHƯƠNG ÁN HIỆN TẠI</small><strong>{chosen?chosen.doctors+' bác sĩ':'Không hợp lệ'}</strong><span>{chosen?'Công suất '+vn(chosen.capacity)+' lượt':'Xem lại nguồn lực'}</span></div>
-      </div>:<div className="ai-empty-case"><BrainCircuit size={31}/><div><strong>Chưa có kịch bản để phân tích.</strong><p>Vào Dự báo & mô phỏng, tính phương án, sau đó mở lại trung tâm AI.</p></div><button type="button" className="primary" onClick={onScenario}>Tạo kịch bản <ArrowRight size={15}/></button></div>}
-      {visitor&&<div className="ai-guest-note"><UserRound size={17}/><span>Chế độ khách chỉ dùng giải thích theo quy tắc. Đăng nhập nhân sự và lưu kịch bản để gọi OpenAI thật.</span><button type="button" className="secondary" onClick={onLogin}>Đăng nhập</button></div>}
+      </div>:<div className="ai-empty-case"><BrainCircuit size={31}/><div><strong>Chưa có kịch bản để phân tích.</strong><p>Tạo và lưu kịch bản (nếu đã đăng nhập) để bắt đầu.</p></div><button type="button" className="primary" onClick={onScenario}>Tạo kịch bản <ArrowRight size={15}/></button></div>}
+      {visitor&&<div className="ai-guest-note"><UserRound size={17}/><span>Khách dùng giải thích theo quy tắc. Đăng nhập để sử dụng dịch vụ AI.</span><button type="button" className="secondary" onClick={onLogin}>Đăng nhập</button></div>}
       {selected&&<>
         <div className="ai-conversation" aria-live="polite" aria-label="Hội thoại phân tích AI">
           {!messages.length&&<div className="ai-conversation-empty"><BrainCircuit size={23}/><p>Hãy đặt câu hỏi đầu tiên. Ví dụ: “Nếu lượt khám tăng thêm 20%, phương án 9 bác sĩ có còn phù hợp?”</p></div>}
@@ -91,7 +87,7 @@ export default function AiWorkspace({scenarios,selected,messages,status,visitor,
           {busy?<Clock3 size={15}/>:<Send size={15}/>} {busy?'Đang phân tích…':visitor?'Xem giải thích không dùng AI':'Gửi câu hỏi đến AI'}</button>
           {messages.length>0&&<button type="button" className="secondary" disabled={busy} onClick={onClear}>Xóa hội thoại hiện tại</button>}
         </div>
-        <p className="tiny muted ai-safety"><ShieldCheck size={14}/> Dữ liệu giả lập. Mọi kịch bản What-if trong hội thoại chỉ là bản xem thử; không cập nhật hồ sơ đã lưu và không tự phê duyệt.</p>
+        <p className="tiny muted ai-safety"><ShieldCheck size={14}/> Mô phỏng trong hội thoại không thay đổi hồ sơ đã lưu. Chỉ Manager được phê duyệt.</p>
       </>}
     </section>
   </div>;
