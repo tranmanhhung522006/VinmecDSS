@@ -59,7 +59,7 @@ export default function ShiftAllocationLab({token,onSaved}:{token:string;onSaved
         <h2>Phân bổ bác sĩ-ca theo khung giờ</h2>
         <p>Mô phỏng nhu cầu và giới hạn nguồn lực ở ba khung ca. Tìm phương án có tổng thiếu hụt thấp nhất trong ngân sách bác sĩ-ca.</p>
       </div></div>
-      <div className="lab-intro-note"><ShieldAlert size={16}/> Giả lập học thuật · Không phải lịch trực định danh</div>
+      <div className="lab-intro-note"><ShieldAlert size={16}/> Phân bổ tổng hợp · Không xếp lịch cá nhân</div>
     </header>
     <div className="lab-grid">
       <form className="card panel lab-form" onSubmit={calculate}>
@@ -86,7 +86,7 @@ export default function ShiftAllocationLab({token,onSaved}:{token:string;onSaved
         {error&&<p role="alert" className="lab-error">{error}</p>}
       </form>
       <div className="lab-results">
-        {!result?<section className="card lab-empty"><Users size={34}/><h2>Phân bổ theo ba khung ca</h2><p>Điều chỉnh nhu cầu và nguồn lực từng ca rồi chạy mô hình tối ưu. Công cụ thử tất cả phân bổ nguyên trong giới hạn, không gọi OpenAI và không lưu kịch bản.</p></section>:<>
+        {!result?<section className="card lab-empty"><Users size={34}/><h2>Phân bổ theo ba khung ca</h2><p>Nhập nhu cầu và giới hạn từng ca để tìm cách phân bổ bác sĩ-ca phù hợp.</p></section>:<>
           {token&&<div className="lab-study-action"><span>Mô phỏng chưa được lưu và chưa phê duyệt.</span><button className="primary" type="button" disabled={saving} onClick={()=>void saveStudy()}>{saving?'Đang lưu…':'Lưu hồ sơ chờ Manager duyệt'}</button></div>}
           <section className="lab-metrics">
             <div className="card"><span><Users size={15}/> Bác sĩ-ca đề xuất</span><strong>{result.recommended.totalDoctorSlots}</strong><small>Ngân sách tối đa {result.inputs.doctorSlotBudget} ca</small></div>

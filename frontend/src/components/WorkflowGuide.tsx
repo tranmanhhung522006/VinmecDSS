@@ -2,9 +2,9 @@ import {ArrowRight,CheckCircle2,ClipboardCheck,LineChart,SlidersHorizontal,BookO
 type Props={role:string;current:'overview'|'scenario'|'history'|'methodology';hasScenario:boolean;hasDecision:boolean;onNavigate:(tab:'overview'|'scenario'|'history'|'methodology')=>void};
 const steps=[
   {id:1,label:'Xem dữ liệu',detail:'Hiểu lượt khám, công suất và xu hướng',tab:'overview' as const,icon:LineChart},
-  {id:2,label:'Dự báo nhu cầu',detail:'Chọn ngày, chạy mô hình, kiểm tra đầu vào',tab:'scenario' as const,icon:BookOpen},
-  {id:3,label:'So sánh phương án',detail:'Thử tăng nhu cầu, xem bác sĩ và chi phí',tab:'scenario' as const,icon:SlidersHorizontal},
-  {id:4,label:'Ra quyết định',detail:'Manager duyệt; những vai trò khác chỉ theo dõi',tab:'scenario' as const,icon:ClipboardCheck}
+  {id:2,label:'Dự báo nhu cầu',detail:'Chọn ngày và nguồn nhu cầu',tab:'scenario' as const,icon:BookOpen},
+  {id:3,label:'So sánh phương án',detail:'Điều chỉnh nhu cầu, xem phương án',tab:'scenario' as const,icon:SlidersHorizontal},
+  {id:4,label:'Ra quyết định',detail:'Lưu kịch bản, Manager xét duyệt',tab:'scenario' as const,icon:ClipboardCheck}
 ];
 export default function WorkflowGuide({role,current,hasScenario,hasDecision,onNavigate}:Props){
   return <section className="card panel guided-workflow" aria-label="Quy trình sử dụng hệ thống">
@@ -17,6 +17,6 @@ export default function WorkflowGuide({role,current,hasScenario,hasDecision,onNa
         <strong>{step.label}</strong><small>{step.detail}</small><span className="guided-action">{step.tab===current?'Đang ở màn hình này':'Mở chức năng'} <ArrowRight size={13}/></span>
       </button>
     })}</div>
-    <p className="guided-note"><strong>Điểm cần nhớ:</strong> AI chỉ giải thích số liệu; hệ thống tính toán phương án. Chỉ Manager có quyền phê duyệt. Đây là mô hình với dữ liệu tổng hợp giả lập, không đưa ra quyết định y khoa.</p>
+    
   </section>;
 }

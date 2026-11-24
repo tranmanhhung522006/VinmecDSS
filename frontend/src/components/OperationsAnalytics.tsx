@@ -42,7 +42,7 @@ export function ScenarioCapacityChart({alternatives,demand,recommendedDoctors}:{
       <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill:'#8395a3',fontSize:11}}/>
       <Tooltip formatter={value=>[format(Number(value))+' visits','Capacity']} />
       <ReferenceLine y={demand} stroke="#c16d39" strokeDasharray="5 5" ifOverflow="extendDomain" />
-      <Bar dataKey="capacity" fill="#4689a0" radius={[5,5,0,0]} maxBarSize={65}/>
+      <Bar animationDuration={550} isAnimationActive={!window.matchMedia('(prefers-reduced-motion: reduce)').matches} dataKey="capacity" fill="#4689a0" radius={[5,5,0,0]} maxBarSize={65}/>
     </BarChart></ResponsiveContainer></div>
     <div className="capacity-foot"><span><Gauge size={15}/> Target: <strong>{format(demand)} visits</strong></span><span><TrendingUp size={15}/> Suggested: <strong>{recommendedDoctors===null?'No eligible option':recommendedDoctors+' doctors'}</strong></span></div>
     {alternatives.some(a=>!a.eligible)&&<p className="tiny muted capacity-caveat">Options exceeding available doctors or clinic rooms remain visible for comparison but are not eligible for approval.</p>}
